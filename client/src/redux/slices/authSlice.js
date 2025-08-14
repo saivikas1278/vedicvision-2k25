@@ -51,7 +51,7 @@ export const loadUser = createAsyncThunk(
           // If API fails, try to use mock data
           if (process.env.NODE_ENV === 'development') {
             console.log('[authSlice] Using mock auth data in development');
-            const mockAuthState = await import('../mock/authState').then(module => module.default);
+            const mockAuthState = await import('../../mock/authState').then(module => module.default);
             if (mockAuthState && mockAuthState.isAuthenticated) {
               return { user: mockAuthState.user };
             }
