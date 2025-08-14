@@ -16,8 +16,20 @@ const authService = {
 
   // Login user
   login: async (credentials) => {
-    const response = await api.post('/auth/login', credentials);
-    return response;
+    try {
+      console.log('[authService] Login attempt:', credentials.email);
+      const response = await api.post('/auth/login', credentials);
+      console.log('[authService] Login success');
+      
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+      }
+      
+      return response;
+    } catch (err) {
+      console.error('[authService] Login error:', err?.response || err);
+      throw err;
+    }
   },
 
   // Get user profile

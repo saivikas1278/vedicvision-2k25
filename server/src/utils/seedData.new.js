@@ -234,15 +234,21 @@ export const seedData = async () => {
     const match = await Match.create({
       tournament: createdTournaments[0]._id,
       sport: 'cricket',
-      team1: createdTeams[0]._id,
-      team2: createdTeams[1]._id,
+      homeTeam: createdTeams[0]._id,
+      awayTeam: createdTeams[1]._id,
       venue: createdTournaments[0].venue,
       scheduledTime: new Date('2025-09-01T14:00:00Z'),
       status: 'scheduled',
       format: 'T20',
+      round: 'quarter-final',
+      matchNumber: 1,
       officials: {
         umpires: ['John Doe', 'Jane Smith'],
         referee: 'Mike Johnson'
+      },
+      score: {
+        home: 0,
+        away: 0
       }
     });
     console.log('🎮 Match created');

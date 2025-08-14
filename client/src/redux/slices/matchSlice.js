@@ -264,6 +264,15 @@ const matchSlice = createSlice({
   },
 });
 
+// Selectors
+export const selectAllMatches = (state) => state.matches.matches;
+export const selectCurrentMatch = (state) => state.matches.currentMatch;
+export const selectLiveMatches = (state) => state.matches.liveMatches;
+export const selectMatchLoading = (state) => state.matches.loading;
+export const selectMatchError = (state) => state.matches.error;
+export const selectMatchPagination = (state) => state.matches.pagination;
+export const selectMatchFilters = (state) => state.matches.filters;
+
 export const { 
   clearError, 
   setFilters, 

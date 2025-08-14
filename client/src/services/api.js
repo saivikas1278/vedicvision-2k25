@@ -44,7 +44,7 @@ api.interceptors.response.use(
   },
   (error) => {
     // Handle token expiration
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config.url.includes('/auth/login')) {
       console.error('[API] Authentication error:', error.response.data);
       localStorage.removeItem('token');
       window.location.href = '/login';

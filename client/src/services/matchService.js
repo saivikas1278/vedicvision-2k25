@@ -50,6 +50,30 @@ const matchService = {
     return response;
   },
 
+  // Get active matches for a tournament
+  getActiveMatches: async (tournamentId) => {
+    const response = await api.get(`/matches/tournament/${tournamentId}/active`);
+    return response;
+  },
+
+  // Get match details with scorecard
+  getMatchDetails: async (matchId) => {
+    const response = await api.get(`/matches/${matchId}/details`);
+    return response;
+  },
+
+  // Update match scorecard
+  updateScorecard: async (matchId, scorecardData) => {
+    const response = await api.put(`/matches/${matchId}/scorecard`, scorecardData);
+    return response;
+  },
+
+  // Get live scorecard
+  getLiveScorecard: async (matchId) => {
+    const response = await api.get(`/matches/${matchId}/live-score`);
+    return response;
+  },
+
   // End match
   endMatch: async (matchId) => {
     const response = await api.post(`/matches/${matchId}/end`);

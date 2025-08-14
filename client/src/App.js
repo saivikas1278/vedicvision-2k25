@@ -32,6 +32,7 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import CricketHub from './pages/Cricket/CricketHub';
 import CricketCreateMatch from './pages/Cricket/CricketCreateMatch';
+import MatchDashboard from './components/Match/MatchDashboard';
 
 // Protected Route Component
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -118,6 +119,24 @@ function App() {
                 <LiveTournamentBoard />
               </ProtectedRoute>
             } 
+          />
+
+          {/* Match Routes */}
+          <Route 
+            path="/tournaments/:tournamentId/matches" 
+            element={
+              <ProtectedRoute>
+                <MatchDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/tournaments/:tournamentId/matches/:matchId" 
+            element={
+              <ProtectedRoute>
+                <MatchDashboard />
+              </ProtectedRoute>
+            }
           />
           
           {/* Posts Routes */}
