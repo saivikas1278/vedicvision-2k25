@@ -310,20 +310,142 @@ export const resetPassword = async (req, res, next) => {
 // @route   GET /api/auth/google
 // @access  Public
 export const googleAuth = async (req, res, next) => {
-  // This would be handled by passport middleware in a real app
-  res.status(501).json({
-    success: false,
-    error: 'Google OAuth not implemented yet'
-  });
+  try {
+    // For now, we'll implement a simple Google OAuth flow
+    // In production, you'd use Passport.js with Google Strategy
+    const { accessToken } = req.body;
+    
+    if (!accessToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Access token is required'
+      });
+    }
+
+    // Verify the token with Google
+    const googleResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
+    
+    if (!googleResponse.ok) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid Google access token'
+      });
+    }
+
+    const googleUser = await googleResponse.json();
+    
+    // Check if user exists
+    let user = await User.findOne({ email: googleUser.email });
+    
+    if (!user) {
+      // Create new user
+      const nameParts = googleUser.name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '-';
+      
+      user = await User.create({
+        firstName,
+        lastName,
+        email: googleUser.email,
+        googleId: googleUser.id,
+        avatar: googleUser.picture,
+        role: 'player',
+        isVerified: true
+      });
+    } else {
+      // Update existing user's Google info
+      user.googleId = googleUser.id;
+      user.avatar = googleUser.picture;
+      user.isVerified = true;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error('Google OAuth error:', error);
+    next(error);
+  }
 };
 
-// @desc    Google OAuth callback
+// @desc    Google OAuth callback (for server-side flow)
 // @route   GET /api/auth/google/callback
 // @access  Public
 export const googleAuthCallback = async (req, res, next) => {
-  // This would be handled by passport middleware in a real app
-  res.status(501).json({
-    success: false,
-    error: 'Google OAuth callback not implemented yet'
-  });
+  try {
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        error: 'Authorization code is required'
+      });
+    }
+
+    // Exchange code for access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: `${process.env.CLIENT_URL}/api/auth/google/callback`,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      return res.status(401).json({
+        success: false,
+        error: 'Failed to exchange code for token'
+      });
+    }
+
+    const tokenData = await tokenResponse.json();
+    
+    // Get user info from Google
+    const userResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenData.access_token}`);
+    
+    if (!userResponse.ok) {
+      return res.status(401).json({
+        success: false,
+        error: 'Failed to get user info from Google'
+      });
+    }
+
+    const googleUser = await userResponse.json();
+    
+    // Check if user exists
+    let user = await User.findOne({ email: googleUser.email });
+    
+    if (!user) {
+      // Create new user
+      const nameParts = googleUser.name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '-';
+      
+      user = await User.create({
+        firstName,
+        lastName,
+        email: googleUser.email,
+        googleId: googleUser.id,
+        avatar: googleUser.picture,
+        role: 'player',
+        isVerified: true
+      });
+    } else {
+      // Update existing user's Google info
+      user.googleId = googleUser.id;
+      user.avatar = googleUser.picture;
+      user.isVerified = true;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error('Google OAuth callback error:', error);
+    next(error);
+  }
 };

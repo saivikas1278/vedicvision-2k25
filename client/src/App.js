@@ -13,6 +13,7 @@ import LoadingSpinner from './components/UI/LoadingSpinner';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
+import GoogleCallback from './pages/Auth/GoogleCallback';
 import Dashboard from './pages/Dashboard/Dashboard';
 import TournamentHub from './pages/Tournament/TournamentHub';
 import TournamentDetails from './pages/Tournament/TournamentDetails';
@@ -97,6 +98,7 @@ function App() {
             path="/register" 
             element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} 
           />
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
           
           {/* Protected Routes */}
           <Route 

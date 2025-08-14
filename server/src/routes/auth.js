@@ -65,7 +65,7 @@ router.post('/forgot-password', forgotPassword);
 router.put('/reset-password/:resetToken', resetPassword);
 
 // Google OAuth routes
-router.get('/google', googleAuth);
+router.post('/google', googleAuth);
 router.get('/google/callback', googleAuthCallback);
 
 // Protected routes

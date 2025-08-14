@@ -190,7 +190,7 @@ export const seedData = async () => {
     ]);
     console.log('📝 Old data cleared');
 
-    // Create users
+    // Create users with hashed passwords (skip pre-save hook)
     const hashedUsers = await Promise.all(
       sampleData.users.map(async (user) => {
         const salt = await bcrypt.genSalt(12);
@@ -198,7 +198,7 @@ export const seedData = async () => {
         return { ...user, password: hashedPassword };
       })
     );
-    const createdUsers = await User.create(hashedUsers);
+    const createdUsers = await User.insertMany(hashedUsers, { validateBeforeSave: false });
     console.log('👤 Users seeded');
 
     // Create tournament first
