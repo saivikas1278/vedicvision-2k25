@@ -2,7 +2,10 @@ import { validationResult } from 'express-validator';
 import Tournament from '../models/Tournament.js';
 import Team from '../models/Team.js';
 import Match from '../models/Match.js';
+import Notification from '../models/Notification.js';
+import Profile from '../models/Profile.js';
 import { emitBracketUpdate } from '../utils/socketHandlers.js';
+import cloudinary from '../config/cloudinary.js';
 
 // @desc    Get all tournaments
 // @route   GET /api/tournaments

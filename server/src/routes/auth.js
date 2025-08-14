@@ -1,11 +1,13 @@
 import express from 'express';
 import { body } from 'express-validator';
+import fileUpload from 'express-fileupload';
 import {
   register,
   login,
   logout,
   getMe,
   updateProfile,
+  uploadAvatar,
   changePassword,
   forgotPassword,
   resetPassword,
@@ -71,6 +73,12 @@ router.get('/google/callback', googleAuthCallback);
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
+router.post('/avatar', protect, fileUpload({
+  useTempFiles: true,
+  tempFileDir: '/tmp/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  abortOnLimit: true
+}), uploadAvatar);
 router.put('/change-password', protect, changePasswordValidation, changePassword);
 
 export default router;

@@ -46,11 +46,11 @@ const authService = {
   },
 
   // Upload profile picture
-  uploadProfilePicture: async (file) => {
+  uploadAvatar: async (file) => {
     const formData = new FormData();
-    formData.append('profilePicture', file);
+    formData.append('avatar', file);
     
-    const response = await api.post('/auth/upload-profile-picture', formData, {
+    const response = await api.post('/auth/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

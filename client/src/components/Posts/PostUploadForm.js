@@ -1,356 +1,505 @@
 import React, { useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
-import { FaCamera, FaVideo, FaTimesCircle, FaTags, FaMapMarkerAlt } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { FaCamera, FaVideo, FaTimesCircle, FaTags, FaMapMarkerAlt, FaImage, FaFileVideo, FaGlobeAmericas, FaUsers, FaLock, FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useTheme } from '../../context/ThemeContext';
+import { createPost } from '../../redux/slices/postSlice';
+import LoadingSpinner from '../UI/LoadingSpinner';
+import GradientButton from '../UI/GradientButton';
 
 const PostUploadForm = ({ onSuccess }) => {
+  const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
+  const { loading } = useSelector(state => state.posts);
   const { isDark } = useTheme();
+  
   const [showForm, setShowForm] = useState(false);
-  const [postType, setPostType] = useState('photo'); // 'photo' or 'video'
-  const [caption, setCaption] = useState('');
-  const [location, setLocation] = useState('');
-  const [tags, setTags] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    type: 'text',
+    sport: '',
+    tags: '',
+    privacy: 'public'
+  });
+  const [selectedFiles, setSelectedFiles] = useState({
+    images: [],
+    videos: []
+  });
+  const [previews, setPreviews] = useState({
+    images: [],
+    videos: []
+  });
   
   const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // Validate file type
-    if (postType === 'photo' && !file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
+  const sports = [
+    'football', 'cricket', 'basketball', 'volleyball', 'badminton', 
+    'kabaddi', 'tennis', 'hockey', 'general'
+  ];
+
+  const privacyOptions = [
+    { value: 'public', label: 'Public', icon: FaGlobeAmericas },
+    { value: 'friends', label: 'Friends', icon: FaUsers },
+    { value: 'private', label: 'Private', icon: FaLock }
+  ];
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileSelect = (type, e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    // Validate file types
+    const validFiles = files.filter(file => {
+      if (type === 'images' && !file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not a valid image file`);
+        return false;
+      }
+      if (type === 'videos' && !file.type.startsWith('video/')) {
+        toast.error(`${file.name} is not a valid video file`);
+        return false;
+      }
+      return true;
+    });
+
+    if (!validFiles.length) return;
+
+    // Update form type based on files
+    const newType = type === 'images' ? 'image' : 'video';
+    setFormData(prev => ({ ...prev, type: newType }));
+
+    // Add new files
+    setSelectedFiles(prev => ({
+      ...prev,
+      [type]: [...prev[type], ...validFiles]
+    }));
+
+    // Create previews
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviews(prev => ({
+          ...prev,
+          [type]: [...prev[type], {
+            file,
+            url: reader.result,
+            name: file.name
+          }]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFile = (type, index) => {
+    setSelectedFiles(prev => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index)
+    }));
+    setPreviews(prev => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index)
+    }));
+
+    // Reset type if no files remain
+    if (selectedFiles.images.length + selectedFiles.videos.length === 1) {
+      setFormData(prev => ({ ...prev, type: 'text' }));
     }
-    
-    if (postType === 'video' && !file.type.startsWith('video/')) {
-      toast.error('Please select a video file');
-      return;
-    }
-    
-    setSelectedFile(file);
-    
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreviewUrl(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!selectedFile) {
-      toast.error(`Please select a ${postType} to upload`);
+    if (!formData.title.trim()) {
+      toast.error('Please enter a title for your post');
       return;
     }
-    
-    if (!caption.trim()) {
-      toast.error('Please add a caption to your post');
+
+    if (!formData.content.trim()) {
+      toast.error('Please enter some content for your post');
       return;
     }
-    
-    setLoading(true);
-    
+
     try {
-      // Simulate API call for upload
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Create tags array from comma-separated string
-      const tagsArray = tags
-        .split(',')
-        .map(tag => tag.trim().toLowerCase())
-        .filter(tag => tag !== '');
-      
-      // Create new post object
-      const newPost = {
-        id: `temp-${Date.now()}`,
-        type: postType,
-        user: {
-          id: user.id,
-          name: user.name,
-          avatar: user.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'
-        },
-        caption,
-        location: location || null,
-        tags: tagsArray,
-        likes: 0,
-        comments: [],
-        timestamp: new Date().toISOString(),
-        sport: tagsArray[0] || 'general'
+      const postData = {
+        ...formData,
+        images: selectedFiles.images,
+        videos: selectedFiles.videos
       };
+
+      const result = await dispatch(createPost(postData)).unwrap();
       
-      // Add type-specific properties
-      if (postType === 'photo') {
-        newPost.imageUrl = previewUrl;
-      } else {
-        newPost.videoUrl = previewUrl;
-        newPost.thumbnailUrl = previewUrl; // In a real app, this would be a thumbnail generated from the video
-      }
-      
-      // Call the onSuccess callback with the new post
-      onSuccess(newPost);
+      toast.success('Post created successfully!');
       
       // Reset form
-      setCaption('');
-      setLocation('');
-      setTags('');
-      setSelectedFile(null);
-      setPreviewUrl('');
+      setFormData({
+        title: '',
+        content: '',
+        type: 'text',
+        sport: '',
+        tags: '',
+        privacy: 'public'
+      });
+      setSelectedFiles({ images: [], videos: [] });
+      setPreviews({ images: [], videos: [] });
       setShowForm(false);
       
-      toast.success(`${postType === 'photo' ? 'Photo' : 'Video'} uploaded successfully!`);
+      if (onSuccess) {
+        onSuccess(result.data);
+      }
     } catch (error) {
-      console.error(`Error uploading ${postType}:`, error);
-      toast.error(`Failed to upload ${postType}. Please try again.`);
-    } finally {
-      setLoading(false);
+      toast.error(error || 'Failed to create post');
     }
   };
 
-  const handleCancel = () => {
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      content: '',
+      type: 'text',
+      sport: '',
+      tags: '',
+      privacy: 'public'
+    });
+    setSelectedFiles({ images: [], videos: [] });
+    setPreviews({ images: [], videos: [] });
     setShowForm(false);
-    setPostType('photo');
-    setCaption('');
-    setLocation('');
-    setTags('');
-    setSelectedFile(null);
-    setPreviewUrl('');
   };
 
+  if (!user) {
+    return (
+      <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+        <p>Please log in to create posts</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={`rounded-xl shadow-md overflow-hidden mb-6 transition-colors duration-300 ${
-      isDark ? 'bg-gray-800' : 'bg-white'
-    }`}>
+    <div className="w-full max-w-2xl mx-auto mb-8">
       {!showForm ? (
-        <button
+        <div 
           onClick={() => setShowForm(true)}
-          className={`w-full p-4 flex items-center space-x-3 transition-colors duration-300 ${
-            isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-          }`}
+          className={`
+            p-4 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-300
+            ${isDark 
+              ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-gray-750' 
+              : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50'
+            }
+          `}
         >
-          <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-            <FaCamera />
+          <div className="flex items-center justify-center space-x-4">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <FaCamera className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            </div>
+            <div>
+              <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                Share your sports journey
+              </p>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Post photos, videos, achievements, or thoughts
+              </p>
+            </div>
           </div>
-          <span className={`transition-colors duration-300 ${
-            isDark ? 'text-gray-300' : 'text-gray-600'
-          }`}>Share a photo or video moment...</span>
-        </button>
+        </div>
       ) : (
-        <form onSubmit={handleSubmit} className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className={`text-lg font-medium transition-colors duration-300 ${
-              isDark ? 'text-white' : 'text-gray-900'
-            }`}>Create Post</h3>
-            <button 
-              type="button"
-              onClick={handleCancel}
-              className={`transition-colors duration-300 ${
-                isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <FaTimesCircle />
-            </button>
-          </div>
-          
-          {/* Post type selection */}
-          <div className="mb-4">
-            <div className="flex border rounded-lg overflow-hidden">
+        <div className={`
+          rounded-xl shadow-lg border
+          ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}
+        `}>
+          <div className={`px-6 py-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className="flex items-center justify-between">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                Create Post
+              </h3>
               <button
-                type="button"
-                className={`flex-1 py-2 flex justify-center items-center space-x-2 transition-all duration-300 ${
-                  postType === 'photo' 
-                    ? 'bg-primary-600 text-white' 
-                    : isDark 
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-                onClick={() => setPostType('photo')}
+                onClick={resetForm}
+                className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               >
-                <FaCamera />
-                <span>Photo</span>
-              </button>
-              <button
-                type="button"
-                className={`flex-1 py-2 flex justify-center items-center space-x-2 transition-all duration-300 ${
-                  postType === 'video' 
-                    ? 'bg-primary-600 text-white' 
-                    : isDark 
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-                onClick={() => setPostType('video')}
-              >
-                <FaVideo />
-                <span>Video</span>
+                <FaTimesCircle className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
               </button>
             </div>
           </div>
-          
-          {/* File preview */}
-          {previewUrl ? (
-            <div className="relative mb-4">
-              {postType === 'photo' ? (
-                <img 
-                  src={previewUrl} 
-                  alt="Preview" 
-                  className="w-full h-64 object-contain bg-black rounded-lg"
-                />
-              ) : (
-                <video 
-                  src={previewUrl} 
-                  className="w-full h-64 object-contain bg-black rounded-lg" 
-                  controls
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedFile(null);
-                  setPreviewUrl('');
-                }}
-                className="absolute top-2 right-2 bg-white bg-opacity-75 rounded-full p-1 text-gray-700 hover:text-red-500"
-              >
-                <FaTimesCircle />
-              </button>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* User Info */}
+            <div className="flex items-center space-x-3">
+              <img
+                src={user.avatar || '/default-avatar.png'}
+                alt={user.firstName}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+              <div>
+                <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                  {user.firstName} {user.lastName}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <select
+                    name="privacy"
+                    value={formData.privacy}
+                    onChange={handleInputChange}
+                    className={`
+                      text-sm px-2 py-1 rounded border-none outline-none cursor-pointer
+                      ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}
+                    `}
+                  >
+                    {privacyOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div 
-              onClick={() => fileInputRef.current.click()}
-              className={`w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center mb-4 cursor-pointer transition-all duration-300 ${
-                isDark 
-                  ? 'border-gray-600 hover:bg-gray-700 hover:border-gray-500' 
-                  : 'border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-              }`}
-            >
-              {postType === 'photo' ? (
-                <>
-                  <FaCamera className={`text-3xl mb-2 transition-colors duration-300 ${
-                    isDark ? 'text-gray-400' : 'text-gray-400'
-                  }`} />
-                  <p className={`transition-colors duration-300 ${
-                    isDark ? 'text-gray-300' : 'text-gray-500'
-                  }`}>Click to select an image</p>
-                  <p className={`text-xs mt-1 transition-colors duration-300 ${
-                    isDark ? 'text-gray-500' : 'text-gray-400'
-                  }`}>PNG, JPG, WEBP up to 5MB</p>
-                </>
-              ) : (
-                <>
-                  <FaVideo className={`text-3xl mb-2 transition-colors duration-300 ${
-                    isDark ? 'text-gray-400' : 'text-gray-400'
-                  }`} />
-                  <p className={`transition-colors duration-300 ${
-                    isDark ? 'text-gray-300' : 'text-gray-500'
-                  }`}>Click to select a video</p>
-                  <p className={`text-xs mt-1 transition-colors duration-300 ${
-                    isDark ? 'text-gray-500' : 'text-gray-400'
-                  }`}>MP4, WEBM up to 30MB</p>
-                </>
-              )}
+
+            {/* Title Input */}
+            <div>
               <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept={postType === 'photo' ? 'image/*' : 'video/*'}
-                className="hidden"
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Give your post a title..."
+                className={`
+                  w-full p-3 rounded-lg border-2 transition-colors
+                  ${isDark 
+                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-blue-400' 
+                    : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-500 focus:border-blue-400'
+                  }
+                  focus:outline-none
+                `}
+                maxLength={100}
               />
             </div>
-          )}
-          
-          {/* Caption */}
-          <div className="mb-4">
-            <label htmlFor="caption" className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
-              isDark ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              Caption
-            </label>
-            <textarea
-              id="caption"
-              placeholder={`Write a caption for your ${postType}...`}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
-                isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-              }`}
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              rows={3}
-              required
-            />
-          </div>
-          
-          {/* Location */}
-          <div className="mb-4">
-            <label htmlFor="location" className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
-              isDark ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              <FaMapMarkerAlt className="inline mr-1" /> Location (optional)
-            </label>
-            <input
-              type="text"
-              id="location"
-              placeholder="Add location"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
-                isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-              }`}
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
-          
-          {/* Tags */}
-          <div className="mb-6">
-            <label htmlFor="tags" className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
-              isDark ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              <FaTags className="inline mr-1" /> Tags (comma-separated)
-            </label>
-            <input
-              type="text"
-              id="tags"
-              placeholder="E.g., basketball, nba, slam"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
-                isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-              }`}
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-            />
-          </div>
-          
-          {/* Buttons */}
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className={`px-4 py-2 border rounded-lg transition-all duration-300 ${
-                isDark 
-                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors duration-300"
-              disabled={loading || !selectedFile || !caption.trim()}
-            >
-              {loading ? 'Uploading...' : `Post ${postType === 'photo' ? 'Photo' : 'Video'}`}
-            </button>
-          </div>
-        </form>
+
+            {/* Content Input */}
+            <div>
+              <textarea
+                name="content"
+                value={formData.content}
+                onChange={handleInputChange}
+                placeholder="What's on your mind? Share your thoughts, achievements, or experiences..."
+                rows={4}
+                className={`
+                  w-full p-3 rounded-lg border-2 transition-colors resize-none
+                  ${isDark 
+                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-blue-400' 
+                    : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-500 focus:border-blue-400'
+                  }
+                  focus:outline-none
+                `}
+                maxLength={2000}
+              />
+              <div className={`text-right text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {formData.content.length}/2000
+              </div>
+            </div>
+
+            {/* File Previews */}
+            {(previews.images.length > 0 || previews.videos.length > 0) && (
+              <div className="space-y-4">
+                {/* Image Previews */}
+                {previews.images.length > 0 && (
+                  <div>
+                    <p className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Images ({previews.images.length})
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {previews.images.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview.url}
+                            alt={preview.name}
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeFile('images', index)}
+                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FaTimesCircle />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Video Previews */}
+                {previews.videos.length > 0 && (
+                  <div>
+                    <p className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Videos ({previews.videos.length})
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {previews.videos.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <video
+                            src={preview.url}
+                            className="w-full h-40 object-cover rounded-lg"
+                            controls
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeFile('videos', index)}
+                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FaTimesCircle />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Additional Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Sport Selection */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Sport Category
+                </label>
+                <select
+                  name="sport"
+                  value={formData.sport}
+                  onChange={handleInputChange}
+                  className={`
+                    w-full p-3 rounded-lg border-2 transition-colors
+                    ${isDark 
+                      ? 'bg-gray-700 border-gray-600 text-gray-200 focus:border-blue-400' 
+                      : 'bg-gray-50 border-gray-200 text-gray-800 focus:border-blue-400'
+                    }
+                    focus:outline-none
+                  `}
+                >
+                  <option value="">Select a sport</option>
+                  {sports.map(sport => (
+                    <option key={sport} value={sport}>
+                      {sport.charAt(0).toUpperCase() + sport.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tags Input */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Tags
+                </label>
+                <input
+                  type="text"
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleInputChange}
+                  placeholder="fitness, training, goals (comma separated)"
+                  className={`
+                    w-full p-3 rounded-lg border-2 transition-colors
+                    ${isDark 
+                      ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-blue-400' 
+                      : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-500 focus:border-blue-400'
+                    }
+                    focus:outline-none
+                  `}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+              {/* Media Upload Buttons */}
+              <div className="flex items-center space-x-4">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`
+                    flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors
+                    ${isDark 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }
+                  `}
+                >
+                  <FaImage />
+                  <span className="hidden sm:inline">Images</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  className={`
+                    flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors
+                    ${isDark 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }
+                  `}
+                >
+                  <FaVideo />
+                  <span className="hidden sm:inline">Video</span>
+                </button>
+
+                {/* Hidden file inputs */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleFileSelect('images', e)}
+                  className="hidden"
+                />
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  multiple
+                  onChange={(e) => handleFileSelect('videos', e)}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className={`
+                    px-6 py-2 rounded-lg transition-colors
+                    ${isDark 
+                      ? 'text-gray-400 hover:text-gray-300' 
+                      : 'text-gray-600 hover:text-gray-800'
+                    }
+                  `}
+                >
+                  Cancel
+                </button>
+                <GradientButton
+                  type="submit"
+                  disabled={loading || !formData.title.trim() || !formData.content.trim()}
+                  className="px-6 py-2"
+                >
+                  {loading ? (
+                    <div className="flex items-center space-x-2">
+                      <LoadingSpinner size="small" />
+                      <span>Posting...</span>
+                    </div>
+                  ) : (
+                    'Post'
+                  )}
+                </GradientButton>
+              </div>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

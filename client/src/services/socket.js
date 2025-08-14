@@ -11,6 +11,7 @@ import {
   addTournamentMatch 
 } from '../redux/slices/tournamentSlice';
 import { addNotification } from '../redux/slices/uiSlice';
+import { addRealTimeNotification } from '../redux/slices/notificationSlice';
 
 let socket = null;
 
@@ -157,12 +158,16 @@ export const initializeSocket = () => {
 
     // General notifications
     socket.on('notification', (data) => {
+      // Add to UI notifications
       store.dispatch(addNotification({
         type: data.type || 'info',
         title: data.title,
         message: data.message,
         ...data
       }));
+      
+      // Add to notification history
+      store.dispatch(addRealTimeNotification(data));
     });
 
     // User events

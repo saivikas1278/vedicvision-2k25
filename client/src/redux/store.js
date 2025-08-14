@@ -6,6 +6,9 @@ import videoSlice from './slices/videoSlice';
 import fitnessSlice from './slices/fitnessSlice';
 import teamSlice from './slices/teamSlice';
 import uiSlice from './slices/uiSlice';
+import postSlice from './slices/postSlice';
+import notificationSlice from './slices/notificationSlice';
+import profileSlice from './slices/profileSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +19,9 @@ export const store = configureStore({
     fitness: fitnessSlice,
     teams: teamSlice,
     ui: uiSlice,
+    posts: postSlice,
+    notifications: notificationSlice,
+    profile: profileSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

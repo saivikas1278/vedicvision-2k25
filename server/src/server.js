@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
+import emailService from './utils/emailService.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import tournamentRoutes from './routes/tournaments.js';
@@ -13,6 +14,10 @@ import matchRoutes from './routes/matches.js';
 import teamRoutes from './routes/teams.js';
 import videoRoutes from './routes/videos.js';
 import fitnessRoutes from './routes/fitness.js';
+import postRoutes from './routes/posts.js';
+import profileRoutes from './routes/profiles.js';
+import notificationRoutes from './routes/notifications.js';
+import testRoutes from './routes/test.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { setupSocketHandlers } from './utils/socketHandlers.js';
 
@@ -33,6 +38,9 @@ const io = new Server(server, {
 
 // Connect to MongoDB
 connectDB();
+
+// Test email service connection
+emailService.testEmailConnection();
 
 // Security middleware
 app.use(helmet());
@@ -70,6 +78,10 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/fitness', fitnessRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/profiles', profileRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/test', testRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../redux/slices/authSlice';
 import { useTheme } from '../../context/ThemeContext';
 import ThemeToggle from '../UI/ThemeToggle';
 import { 
@@ -10,18 +12,25 @@ import {
   FaBars, 
   FaTimes,
   FaBell,
-  FaSearch,
   FaGamepad,
   FaNewspaper,
-  FaFootballBall
+  FaFootballBall,
+  FaSignInAlt,
+  FaUserPlus,
+  FaSignOutAlt
 } from 'react-icons/fa';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeHover, setActiveHover] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { isDark } = useTheme();
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,15 +41,24 @@ const Navbar = () => {
   }, []);
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: FaHome },
-    { name: 'Cricket', path: '/cricket', icon: FaGamepad },
-    { name: 'Matches', path: '/matches', icon: FaFootballBall },
-    { name: 'Tournaments', path: '/tournaments', icon: FaTrophy },
-    { name: 'Posts', path: '/posts', icon: FaNewspaper },
-    { name: 'Fitness', path: '/fitness', icon: FaDumbbell },
+    { name: 'Dashboard', path: '/dashboard', icon: FaHome, protected: true },
+    { name: 'Cricket', path: '/cricket', icon: FaGamepad, protected: false },
+    { name: 'Matches', path: '/matches', icon: FaFootballBall, protected: false },
+    { name: 'Tournaments', path: '/tournaments', icon: FaTrophy, protected: false },
+    { name: 'Posts', path: '/posts', icon: FaNewspaper, protected: false },
+    { name: 'Fitness', path: '/fitness', icon: FaDumbbell, protected: false },
   ];
 
   const isActivePath = (path) => location.pathname.startsWith(path);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
+    setShowProfileMenu(false);
+  };
+
+  // Filter nav items based on authentication status
+  const visibleNavItems = navItems.filter(item => !item.protected || isAuthenticated);
 
   return (
     <>
@@ -121,7 +139,7 @@ const Navbar = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-1">
-              {navItems.map((item, index) => {
+              {visibleNavItems.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = isActivePath(item.path);
                 return (
@@ -168,48 +186,138 @@ const Navbar = () => {
 
             {/* Right side controls */}
             <div className="flex items-center space-x-3">
-              {/* Search button */}
-              <button className={`
-                p-2 rounded-xl transition-all duration-300 transform hover:scale-110
-                ${isScrolled 
-                  ? isDark
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
-                  : 'text-white/90 hover:bg-white/10 hover:text-white'
-                }
-              `}>
-                <FaSearch className="text-lg" />
-              </button>
-
-              {/* Notifications */}
-              <button className={`
-                relative p-2 rounded-xl transition-all duration-300 transform hover:scale-110
-                ${isScrolled 
-                  ? isDark
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
-                  : 'text-white/90 hover:bg-white/10 hover:text-white'
-                }
-              `}>
-                <FaBell className="text-lg" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-              </button>
+              {/* Notifications - only show when authenticated */}
+              {isAuthenticated && (
+                <button className={`
+                  relative p-2 rounded-xl transition-all duration-300 transform hover:scale-110
+                  ${isScrolled 
+                    ? isDark
+                      ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
+                    : 'text-white/90 hover:bg-white/10 hover:text-white'
+                  }
+                `}>
+                  <FaBell className="text-lg" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                </button>
+              )}
 
               {/* Theme Toggle */}
               <ThemeToggle variant="dropdown" />
 
-              {/* Profile */}
-              <Link to="/profile" className={`
-                p-2 rounded-xl transition-all duration-300 transform hover:scale-110
-                ${isScrolled 
-                  ? isDark
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
-                  : 'text-white/90 hover:bg-white/10 hover:text-white'
-                }
-              `}>
-                <FaUser className="text-lg" />
-              </Link>
+              {/* Authentication Buttons */}
+              {isAuthenticated ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className={`
+                      flex items-center space-x-2 p-2 rounded-xl transition-all duration-300 transform hover:scale-110
+                      ${isScrolled 
+                        ? isDark
+                          ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
+                        : 'text-white/90 hover:bg-white/10 hover:text-white'
+                      }
+                    `}
+                  >
+                    {user?.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt={user.firstName || 'User'} 
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <FaUser className="text-lg" />
+                    )}
+                    <span className="hidden sm:block text-sm font-medium">
+                      {user?.firstName || 'Profile'}
+                    </span>
+                  </button>
+
+                  {/* Profile Dropdown */}
+                  {showProfileMenu && (
+                    <div className={`
+                      absolute right-0 mt-2 w-48 rounded-lg shadow-lg z-50
+                      ${isDark 
+                        ? 'bg-gray-800 border border-gray-700' 
+                        : 'bg-white border border-gray-200'
+                      }
+                    `}>
+                      <div className="py-1">
+                        <Link
+                          to="/profile"
+                          className={`
+                            block px-4 py-2 text-sm transition-colors duration-200
+                            ${isDark 
+                              ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                              : 'text-gray-700 hover:bg-gray-100'
+                            }
+                          `}
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          <FaUser className="inline mr-2" />
+                          My Profile
+                        </Link>
+                        <Link
+                          to="/settings"
+                          className={`
+                            block px-4 py-2 text-sm transition-colors duration-200
+                            ${isDark 
+                              ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                              : 'text-gray-700 hover:bg-gray-100'
+                            }
+                          `}
+                          onClick={() => setShowProfileMenu(false)}
+                        >
+                          Settings
+                        </Link>
+                        <hr className={`my-1 ${isDark ? 'border-gray-700' : 'border-gray-200'}`} />
+                        <button
+                          onClick={handleLogout}
+                          className={`
+                            block w-full text-left px-4 py-2 text-sm transition-colors duration-200
+                            ${isDark 
+                              ? 'text-red-400 hover:bg-gray-700 hover:text-red-300' 
+                              : 'text-red-600 hover:bg-gray-100'
+                            }
+                          `}
+                        >
+                          <FaSignOutAlt className="inline mr-2" />
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/login"
+                    className={`
+                      flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 transform hover:scale-105
+                      ${isScrolled 
+                        ? isDark
+                          ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                        : 'text-white/90 hover:bg-white/10 hover:text-white'
+                      }
+                    `}
+                  >
+                    <FaSignInAlt className="text-sm" />
+                    <span className="hidden sm:block text-sm font-medium">Sign In</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    className={`
+                      flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 transform hover:scale-105
+                      bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl
+                    `}
+                  >
+                    <FaUserPlus className="text-sm" />
+                    <span className="hidden sm:block text-sm font-medium">Sign Up</span>
+                  </Link>
+                </div>
+              )}
 
               {/* Mobile menu button */}
               <button
@@ -240,7 +348,7 @@ const Navbar = () => {
           }
         `}>
           <div className="px-4 py-4 space-y-2">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = isActivePath(item.path);
               return (
@@ -264,6 +372,36 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            
+            {/* Mobile Auth Links */}
+            {!isAuthenticated && (
+              <>
+                <hr className={`my-2 ${isDark ? 'border-gray-700' : 'border-gray-200'}`} />
+                <Link
+                  to="/login"
+                  className={`
+                    flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300
+                    ${isDark
+                      ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                    }
+                    transform hover:translate-x-2
+                  `}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <FaSignInAlt className="text-lg" />
+                  <span className="font-medium">Sign In</span>
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform hover:translate-x-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <FaUserPlus className="text-lg" />
+                  <span className="font-medium">Sign Up</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>

@@ -1,7 +1,10 @@
 import { validationResult } from 'express-validator';
 import User from '../models/User.js';
+import Profile from '../models/Profile.js';
 import { sendTokenResponse } from '../utils/jwt.js';
+import emailService from '../utils/emailService.js';
 import crypto from 'crypto';
+import cloudinary from '../config/cloudinary.js';
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -53,6 +56,44 @@ export const register = async (req, res, next) => {
       phoneNumber
     });
     console.log('[REGISTER] User created:', user._id);
+
+    // Create user profile
+    const profile = new Profile({
+      user: user._id,
+      preferences: {
+        sports: [],
+        notifications: {
+          email: true,
+          push: true,
+          sms: false,
+          types: {
+            likes: true,
+            comments: true,
+            follows: true,
+            teamInvites: true,
+            tournamentUpdates: true,
+            matchUpdates: true
+          }
+        },
+        privacy: {
+          profileVisibility: 'public',
+          showEmail: false,
+          showPhone: false,
+          showLocation: true
+        }
+      }
+    });
+    await profile.save();
+    console.log('[REGISTER] Profile created for user:', user._id);
+
+    // Send welcome email (don't await to avoid blocking registration)
+    try {
+      await emailService.sendWelcomeEmail(user.email, user.firstName);
+      console.log('[REGISTER] Welcome email sent to:', user.email);
+    } catch (emailError) {
+      console.error('[REGISTER] Failed to send welcome email:', emailError);
+      // Don't fail registration if email fails
+    }
 
     sendTokenResponse(user, 201, res);
   } catch (error) {
@@ -122,13 +163,17 @@ export const logout = async (req, res, next) => {
 // @access  Private
 export const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id)
-      .populate('following', 'firstName lastName avatar')
-      .populate('followers', 'firstName lastName avatar');
+    const user = await User.findById(req.user.id);
+    const profile = await Profile.findOne({ user: req.user.id });
+
+    const userData = {
+      ...user.toObject(),
+      profile: profile || null
+    };
 
     res.status(200).json({
       success: true,
-      data: user
+      data: userData
     });
   } catch (error) {
     next(error);
@@ -165,6 +210,50 @@ export const updateProfile = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Upload avatar
+// @route   POST /api/auth/avatar
+// @access  Private
+export const uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.files || !req.files.avatar) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please upload an image file'
+      });
+    }
+
+    const file = req.files.avatar;
+
+    // Upload to cloudinary
+    const result = await cloudinary.uploader.upload(file.tempFilePath, {
+      folder: 'avatars',
+      width: 300,
+      height: 300,
+      crop: 'fill',
+      gravity: 'face'
+    });
+
+    // Update user with new avatar
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { 
+        avatar: result.secure_url,
+        avatarPublicId: result.public_id
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        avatar: user.avatar
+      }
     });
   } catch (error) {
     next(error);

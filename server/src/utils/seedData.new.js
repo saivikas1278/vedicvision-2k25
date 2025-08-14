@@ -233,17 +233,18 @@ export const seedData = async () => {
     // Create a match between first two teams
     const match = await Match.create({
       tournament: createdTournaments[0]._id,
-      sport: 'cricket',
-      team1: createdTeams[0]._id,
-      team2: createdTeams[1]._id,
-      venue: createdTournaments[0].venue,
+      round: 'group-stage-round-1',
+      matchNumber: 1,
+      homeTeam: createdTeams[0]._id,
+      awayTeam: createdTeams[1]._id,
       scheduledTime: new Date('2025-09-01T14:00:00Z'),
-      status: 'scheduled',
-      format: 'T20',
-      officials: {
-        umpires: ['John Doe', 'Jane Smith'],
-        referee: 'Mike Johnson'
-      }
+      venue: {
+        name: createdTournaments[0].venue.name,
+        address: createdTournaments[0].venue.address,
+        city: createdTournaments[0].venue.city,
+        state: createdTournaments[0].venue.state
+      },
+      status: 'scheduled'
     });
     console.log('🎮 Match created');
 

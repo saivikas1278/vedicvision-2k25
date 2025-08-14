@@ -83,3 +83,18 @@ export const optional = async (req, res, next) => {
     next(error);
   }
 };
+
+// Alias for optional auth
+export const optionalAuth = optional;
+
+// Admin authorization
+export const admin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Admin role required.'
+    });
+  }
+};
