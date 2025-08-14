@@ -23,21 +23,12 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: function (origin, callback) {
-      const allowedOrigins = [
-        process.env.CLIENT_URL,
-        'http://localhost:3000',
-        'http://localhost:3001'
-      ];
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'], // Allow specific origins
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true
-  }
+    credentials: true,
+    allowEIO3: true
+  },
+  transports: ['websocket', 'polling']
 });
 
 // Connect to MongoDB
@@ -48,22 +39,7 @@ app.use(helmet());
 
 // CORS configuration
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      process.env.CLIENT_URL,
-      'http://localhost:3000',
-      'http://localhost:3001'
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'], // Allow specific origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

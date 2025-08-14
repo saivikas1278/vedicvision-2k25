@@ -32,10 +32,12 @@ export const showToast = (message, type = 'info') => {
   }
 };
 
-export default {
+const toastUtils = {
   success: showSuccess,
   error: showError,
   warning: showWarning,
   info: showInfo,
   show: showToast,
 };
+
+export default toastUtils;

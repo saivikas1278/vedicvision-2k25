@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaDumbbell, FaCalendarAlt, FaChartBar, FaTrophy, FaAppleAlt, FaStopwatch, FaPlus, FaFire, FaUsers, FaTargetArrow } from 'react-icons/fa';
+import { FaDumbbell, FaChartBar, FaTrophy, FaAppleAlt, FaStopwatch, FaPlus, FaFire } from 'react-icons/fa';
 import { showToast } from '../../utils/toast';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
 

@@ -3,6 +3,7 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
+  darkMode: 'class', // Enable dark mode with class strategy
   theme: {
     extend: {
       fontFamily: {
@@ -62,6 +63,8 @@ module.exports = {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'bounce-slow': 'bounce 2s infinite',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'spin-slow': 'spin 8s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -72,6 +75,13 @@ module.exports = {
           '0%': { transform: 'translateY(20px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+      },
+      backdropBlur: {
+        'xs': '2px',
+      },
+      transitionDuration: {
+        '400': '400ms',
+        '600': '600ms',
       },
     },
   },

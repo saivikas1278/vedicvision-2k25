@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChartBar, FaArrowLeft, FaCalendarAlt, FaTrophy, FaFire, FaClock, FaWeight, FaRuler } from 'react-icons/fa';
+import { FaChartBar, FaArrowLeft, FaTrophy, FaFire, FaClock, FaWeight } from 'react-icons/fa';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,

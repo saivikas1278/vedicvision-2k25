@@ -1,203 +1,276 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../../redux/slices/authSlice';
-import { setSidebarOpen } from '../../redux/slices/uiSlice';
+import { useTheme } from '../../context/ThemeContext';
+import ThemeToggle from '../UI/ThemeToggle';
+import { 
+  FaHome, 
+  FaTrophy, 
+  FaDumbbell, 
+  FaUser, 
+  FaBars, 
+  FaTimes,
+  FaBell,
+  FaSearch,
+  FaGamepad,
+  FaNewspaper,
+  FaFootballBall
+} from 'react-icons/fa';
 
 const Navbar = () => {
-  const dispatch = useDispatch();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeHover, setActiveHover] = useState(null);
   const location = useLocation();
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
-  const { notifications } = useSelector((state) => state.ui);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const { isDark } = useTheme();
 
-  const unreadNotifications = notifications.filter(n => !n.read).length;
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    setShowUserMenu(false);
-  };
-
-  const toggleSidebar = () => {
-    dispatch(setSidebarOpen(true));
-  };
-
-  const navLinks = [
-    { path: '/tournaments', label: 'Tournaments' },
-    { path: '/posts', label: 'Posts' },
-    { path: '/fitness', label: 'Fitness' },
-    { path: '/about', label: 'About' },
-    { path: '/contact', label: 'Contact' },
+  const navItems = [
+    { name: 'Dashboard', path: '/dashboard', icon: FaHome },
+    { name: 'Cricket', path: '/cricket', icon: FaGamepad },
+    { name: 'Matches', path: '/matches', icon: FaFootballBall },
+    { name: 'Tournaments', path: '/tournaments', icon: FaTrophy },
+    { name: 'Posts', path: '/posts', icon: FaNewspaper },
+    { name: 'Fitness', path: '/fitness', icon: FaDumbbell },
   ];
 
+  const isActivePath = (path) => location.pathname.startsWith(path);
+
   return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo and Brand */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-primary-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SS</span>
+    <>
+      {/* Glassmorphism Navbar */}
+      <nav className={`
+        fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out
+        ${isScrolled 
+          ? isDark
+            ? 'bg-gray-900/80 backdrop-blur-xl shadow-lg border-b border-gray-700/50'
+            : 'bg-white/80 backdrop-blur-xl shadow-lg border-b border-white/20'
+          : isDark
+            ? 'bg-gradient-to-r from-gray-800/90 via-gray-900/90 to-black/90 backdrop-blur-sm'
+            : 'bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-pink-600/90 backdrop-blur-sm'
+        }
+      `}>
+        {/* Animated background orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className={`
+            absolute -top-4 -left-4 w-24 h-24 rounded-full transition-all duration-1000
+            ${isScrolled 
+              ? isDark ? 'bg-cyan-400/10' : 'bg-blue-200/20'
+              : 'bg-white/10'
+            }
+            animate-pulse
+          `} />
+          <div className={`
+            absolute -top-2 right-20 w-16 h-16 rounded-full transition-all duration-1000 delay-300
+            ${isScrolled 
+              ? isDark ? 'bg-purple-400/10' : 'bg-purple-200/20'
+              : 'bg-white/10'
+            }
+            animate-bounce
+          `} />
+          <div className={`
+            absolute top-8 right-8 w-8 h-8 rounded-full transition-all duration-1000 delay-500
+            ${isScrolled 
+              ? isDark ? 'bg-pink-400/10' : 'bg-pink-200/20'
+              : 'bg-white/10'
+            }
+            animate-ping
+          `} />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            
+            {/* Logo with animated elements */}
+            <Link to="/" className="flex items-center space-x-3 group">
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-600 rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300">
+                  <FaTrophy className="text-white text-lg" />
+                </div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-600 rounded-xl blur opacity-0 group-hover:opacity-75 transition-opacity duration-300 -z-10" />
               </div>
-              <span className="text-xl font-bold gradient-text">SportSphere</span>
+              <div className="flex flex-col">
+                <span className={`
+                  text-xl font-bold transition-all duration-300
+                  ${isScrolled 
+                    ? isDark 
+                      ? 'bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent'
+                      : 'bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'
+                    : 'text-white'
+                  }
+                `}>
+                  SportSphere
+                </span>
+                <span className={`
+                  text-xs font-medium opacity-75 transition-all duration-300
+                  ${isScrolled 
+                    ? isDark ? 'text-gray-400' : 'text-gray-500'
+                    : 'text-white/80'
+                  }
+                `}>
+                  Elite Sports Platform
+                </span>
+              </div>
             </Link>
-          </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname === link.path
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Right side */}
-          <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-                {/* Dashboard Link */}
-                <Link
-                  to="/dashboard"
-                  className="btn-primary hidden sm:inline-flex"
-                >
-                  Dashboard
-                </Link>
-
-                {/* Notifications */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="p-2 text-gray-600 hover:text-primary-600 transition-colors relative"
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-1">
+              {navItems.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = isActivePath(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="relative group"
+                    onMouseEnter={() => setActiveHover(index)}
+                    onMouseLeave={() => setActiveHover(null)}
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19H6.5A2.5 2.5 0 014 16.5v-12A2.5 2.5 0 016.5 2H14a2.5 2.5 0 012.5 2.5V11" />
-                    </svg>
-                    {unreadNotifications > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-danger-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {unreadNotifications}
-                      </span>
+                    <div className={`
+                      flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300
+                      ${isActive 
+                        ? 'bg-white/20 text-white shadow-lg' 
+                        : isScrolled 
+                          ? isDark
+                            ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                            : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                          : 'text-white/90 hover:bg-white/10 hover:text-white'
+                      }
+                      transform hover:scale-105
+                    `}>
+                      <Icon className={`
+                        text-sm transition-all duration-300
+                        ${activeHover === index ? 'animate-bounce' : ''}
+                      `} />
+                      <span className="font-medium text-sm">{item.name}</span>
+                    </div>
+                    
+                    {/* Active indicator */}
+                    {isActive && (
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full animate-pulse" />
                     )}
-                  </button>
+                    
+                    {/* Hover glow effect */}
+                    <div className={`
+                      absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/20 to-purple-600/20 
+                      opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 blur-sm
+                    `} />
+                  </Link>
+                );
+              })}
+            </div>
 
-                  {/* Notifications Dropdown */}
-                  {showNotifications && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                      <div className="p-4">
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Notifications</h3>
-                        {notifications.length > 0 ? (
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
-                            {notifications.slice(0, 5).map((notification) => (
-                              <div
-                                key={notification.id}
-                                className={`p-3 rounded-lg ${
-                                  notification.read ? 'bg-gray-50' : 'bg-primary-50'
-                                }`}
-                              >
-                                <p className="text-sm font-medium text-gray-900">
-                                  {notification.title}
-                                </p>
-                                <p className="text-sm text-gray-600">{notification.message}</p>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500">No notifications</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {/* Right side controls */}
+            <div className="flex items-center space-x-3">
+              {/* Search button */}
+              <button className={`
+                p-2 rounded-xl transition-all duration-300 transform hover:scale-110
+                ${isScrolled 
+                  ? isDark
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
+                  : 'text-white/90 hover:bg-white/10 hover:text-white'
+                }
+              `}>
+                <FaSearch className="text-lg" />
+              </button>
 
-                {/* User Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <img
-                      src={user?.profilePicture || `https://ui-avatars.com/api/?name=${user?.fullName}&background=6366f1&color=fff`}
-                      alt={user?.fullName}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="hidden sm:block text-sm font-medium text-gray-700">
-                      {user?.fullName}
-                    </span>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+              {/* Notifications */}
+              <button className={`
+                relative p-2 rounded-xl transition-all duration-300 transform hover:scale-110
+                ${isScrolled 
+                  ? isDark
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
+                  : 'text-white/90 hover:bg-white/10 hover:text-white'
+                }
+              `}>
+                <FaBell className="text-lg" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+              </button>
 
-                  {/* User Dropdown */}
-                  {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                      <div className="py-1">
-                        <Link
-                          to="/profile"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          Profile
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          Settings
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Sign out
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="text-gray-700 hover:text-primary-600 font-medium"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/register"
-                  className="btn-primary"
-                >
-                  Sign up
-                </Link>
-              </div>
-            )}
+              {/* Theme Toggle */}
+              <ThemeToggle variant="dropdown" />
 
-            {/* Mobile menu button */}
-            <button
-              onClick={toggleSidebar}
-              className="md:hidden p-2 text-gray-600 hover:text-primary-600"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+              {/* Profile */}
+              <Link to="/profile" className={`
+                p-2 rounded-xl transition-all duration-300 transform hover:scale-110
+                ${isScrolled 
+                  ? isDark
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
+                  : 'text-white/90 hover:bg-white/10 hover:text-white'
+                }
+              `}>
+                <FaUser className="text-lg" />
+              </Link>
+
+              {/* Mobile menu button */}
+              <button
+                className={`
+                  md:hidden p-2 rounded-xl transition-all duration-300
+                  ${isScrolled 
+                    ? isDark
+                      ? 'text-gray-300 hover:bg-gray-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-white hover:bg-white/10'
+                  }
+                `}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+
+        {/* Mobile Menu */}
+        <div className={`
+          md:hidden transition-all duration-300 ease-out overflow-hidden
+          ${isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
+          ${isDark 
+            ? 'bg-gray-900/95 backdrop-blur-xl border-t border-gray-700/50'
+            : 'bg-white/95 backdrop-blur-xl border-t border-white/20'
+          }
+        `}>
+          <div className="px-4 py-4 space-y-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = isActivePath(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`
+                    flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
+                      : isDark
+                        ? 'text-gray-300 hover:bg-gray-700 hover:text-cyan-400'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                    }
+                    transform hover:translate-x-2
+                  `}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Icon className="text-lg" />
+                  <span className="font-medium">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      {/* Spacer to prevent content overlap */}
+      <div className="h-16" />
+    </>
   );
 };
 

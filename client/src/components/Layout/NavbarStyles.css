@@ -1,0 +1,186 @@
+/* Custom Navbar Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(34, 211, 238, 0.4),
+                0 0 10px rgba(34, 211, 238, 0.3),
+                0 0 15px rgba(34, 211, 238, 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.6),
+                0 0 20px rgba(34, 211, 238, 0.5),
+                0 0 30px rgba(34, 211, 238, 0.4);
+  }
+}
+
+@keyframes circuit-flow {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes hologram-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+  75% { opacity: 0.9; }
+}
+
+@keyframes data-stream {
+  0% { transform: translateY(100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Utility classes */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-circuit-flow {
+  animation: circuit-flow 3s linear infinite;
+}
+
+.animate-hologram-flicker {
+  animation: hologram-flicker 4s ease-in-out infinite;
+}
+
+.animate-data-stream {
+  animation: data-stream 2s linear infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Glassmorphism effects */
+.glass-effect {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Neon glow effect */
+.neon-glow {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+.neon-border {
+  border: 2px solid;
+  border-image: linear-gradient(45deg, #00f5ff, #0080ff, #8000ff, #ff0080) 1;
+  box-shadow: 
+    inset 0 0 20px rgba(0, 245, 255, 0.2),
+    0 0 20px rgba(0, 245, 255, 0.3);
+}
+
+/* Circuit board pattern */
+.circuit-pattern {
+  background-image: 
+    linear-gradient(90deg, rgba(34, 211, 238, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(34, 211, 238, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  position: relative;
+}
+
+.circuit-pattern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 10px 10px, rgba(34, 211, 238, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Particle effect */
+.particle-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #00f5ff, transparent),
+    radial-gradient(2px 2px at 40px 70px, #0080ff, transparent),
+    radial-gradient(1px 1px at 90px 40px, #8000ff, transparent),
+    radial-gradient(1px 1px at 130px 80px, #ff0080, transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  animation: particle-float 20s linear infinite;
+  opacity: 0.3;
+}
+
+@keyframes particle-float {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-200px); }
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .nav-mobile-hidden {
+    display: none;
+  }
+  
+  .nav-mobile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+/* Dark mode specific styles */
+@media (prefers-color-scheme: dark) {
+  .auto-dark-bg {
+    background: rgba(0, 0, 0, 0.9);
+  }
+  
+  .auto-dark-text {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .auto-dark-border {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}

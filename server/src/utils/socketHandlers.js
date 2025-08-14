@@ -1,6 +1,62 @@
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+
 export const setupSocketHandlers = (io) => {
+  // Middleware for socket authentication
+  io.use(async (socket, next) => {
+    try {
+      const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        // Allow anonymous connections in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🔌 Anonymous connection allowed in development: ${socket.id}`);
+          socket.user = null;
+          return next();
+        }
+        return next(new Error('Authentication error: No token provided'));
+      }
+
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select('-password');
+        
+        if (!user) {
+          return next(new Error('Authentication error: User not found'));
+        }
+        
+        socket.user = user;
+        console.log(`🔐 Authenticated user connected: ${user.firstName} ${user.lastName} (${socket.id})`);
+        next();
+      } catch (jwtError) {
+        // Allow anonymous connections in development with invalid tokens
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🔌 Invalid token, allowing anonymous connection in development: ${socket.id}`);
+          socket.user = null;
+          return next();
+        }
+        return next(new Error('Authentication error: Invalid token'));
+      }
+    } catch (error) {
+      console.error('Socket authentication error:', error);
+      next(new Error('Authentication error'));
+    }
+  });
+
   io.on('connection', (socket) => {
     console.log(`🔌 User connected: ${socket.id}`);
+    
+    // Send authentication status
+    socket.emit('auth_status', {
+      authenticated: !!socket.user,
+      user: socket.user ? {
+        id: socket.user._id,
+        firstName: socket.user.firstName,
+        lastName: socket.user.lastName,
+        email: socket.user.email,
+        role: socket.user.role
+      } : null
+    });
 
     // Join tournament room
     socket.on('join-tournament', (tournamentId) => {

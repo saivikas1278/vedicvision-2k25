@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaAppleAlt, FaArrowLeft, FaPlus, FaSearch, FaWater, FaUtensils, FaCalculator } from 'react-icons/fa';
+import { FaAppleAlt, FaArrowLeft, FaPlus, FaSearch } from 'react-icons/fa';
 
 const NutritionTracker = () => {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const NutritionTracker = () => {
     fat: 0,
     water: 0
   });
-  const [goals, setGoals] = useState({
+  const [goals] = useState({
     calories: 2200,
     protein: 165,
     carbs: 275,
@@ -43,10 +43,6 @@ const NutritionTracker = () => {
     { id: 15, name: 'Apple (1 medium)', calories: 95, protein: 0.5, carbs: 25, fat: 0.3 }
   ];
 
-  useEffect(() => {
-    calculateDailyIntake();
-  }, [meals]);
-
   const calculateDailyIntake = () => {
     const totals = meals.reduce((acc, meal) => {
       acc.calories += meal.calories;
@@ -58,6 +54,10 @@ const NutritionTracker = () => {
 
     setDailyIntake({ ...totals, water: waterIntake });
   };
+
+  useEffect(() => {
+    calculateDailyIntake();
+  }, [meals, waterIntake]);
 
   const addFoodToMeal = (food, quantity = 1) => {
     const mealEntry = {

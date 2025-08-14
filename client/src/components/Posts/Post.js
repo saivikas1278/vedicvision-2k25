@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart, FaComment, FaShare, FaBookmark, FaRegBookmark, FaEllipsisH, FaPlay } from 'react-icons/fa';
-import { formatDate, getRelativeTime } from '../../utils/helpers';
+import { getRelativeTime } from '../../utils/helpers';
+import { useTheme } from '../../context/ThemeContext';
 
 const Post = ({ post }) => {
+  const { isDark } = useTheme();
   const [liked, setLiked] = useState(post.liked || false);
   const [saved, setSaved] = useState(post.saved || false);
   const [likes, setLikes] = useState(post.likes);
@@ -47,9 +49,13 @@ const Post = ({ post }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6 transition-all duration-300 hover:shadow-lg">
+    <div className={`rounded-xl shadow-md overflow-hidden mb-6 transition-all duration-300 hover:shadow-lg ${
+      isDark ? 'bg-gray-800' : 'bg-white'
+    }`}>
       {/* Post header */}
-      <div className="p-4 flex items-center justify-between border-b">
+      <div className={`p-4 flex items-center justify-between border-b transition-colors duration-300 ${
+        isDark ? 'border-gray-700' : 'border-gray-200'
+      }`}>
         <div className="flex items-center space-x-3">
           <Link to={`/profile/${post.user.id}`}>
             <img 
@@ -59,19 +65,31 @@ const Post = ({ post }) => {
             />
           </Link>
           <div>
-            <Link to={`/profile/${post.user.id}`} className="font-medium text-gray-900 hover:text-primary-600">
+            <Link to={`/profile/${post.user.id}`} className={`font-medium transition-colors duration-300 ${
+              isDark 
+                ? 'text-white hover:text-primary-400' 
+                : 'text-gray-900 hover:text-primary-600'
+            }`}>
               {post.user.name}
             </Link>
             {post.location && (
-              <p className="text-xs text-gray-500">{post.location}</p>
+              <p className={`text-xs transition-colors duration-300 ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>{post.location}</p>
             )}
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-xs font-medium px-2 py-1 bg-gray-100 rounded-full text-gray-700">
+          <span className={`text-xs font-medium px-2 py-1 rounded-full transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-700 text-gray-300' 
+              : 'bg-gray-100 text-gray-700'
+          }`}>
             {isVideo ? 'Video' : 'Photo'}
           </span>
-          <button className="text-gray-500 hover:text-gray-700">
+          <button className={`transition-colors duration-300 ${
+            isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+          }`}>
             <FaEllipsisH />
           </button>
         </div>
@@ -108,7 +126,9 @@ const Post = ({ post }) => {
       </div>
       
       {/* Post actions */}
-      <div className="p-4 border-b">
+      <div className={`p-4 border-b transition-colors duration-300 ${
+        isDark ? 'border-gray-700' : 'border-gray-200'
+      }`}>
         <div className="flex justify-between mb-3">
           <div className="flex space-x-4">
             <button 
@@ -118,17 +138,33 @@ const Post = ({ post }) => {
               {liked ? <FaHeart className="w-6 h-6" /> : <FaRegHeart className="w-6 h-6" />}
             </button>
             <button 
-              className="flex items-center space-x-1 text-gray-700"
+              className={`flex items-center space-x-1 transition-colors duration-300 ${
+                showComments 
+                  ? isDark 
+                    ? 'text-primary-400' 
+                    : 'text-primary-600'
+                  : isDark 
+                    ? 'text-gray-300 hover:text-gray-100' 
+                    : 'text-gray-700 hover:text-gray-900'
+              }`}
               onClick={() => setShowComments(!showComments)}
             >
               <FaComment className="w-6 h-6" />
             </button>
-            <button className="flex items-center space-x-1 text-gray-700">
+            <button className={`flex items-center space-x-1 transition-colors duration-300 ${
+              isDark ? 'text-gray-300 hover:text-gray-100' : 'text-gray-700 hover:text-gray-900'
+            }`}>
               <FaShare className="w-6 h-6" />
             </button>
           </div>
           <button 
-            className={saved ? 'text-primary-600' : 'text-gray-700'}
+            className={`transition-colors duration-300 ${
+              saved 
+                ? 'text-primary-600' 
+                : isDark 
+                  ? 'text-gray-300 hover:text-gray-100' 
+                  : 'text-gray-700 hover:text-gray-900'
+            }`}
             onClick={handleSave}
           >
             {saved ? <FaBookmark className="w-6 h-6" /> : <FaRegBookmark className="w-6 h-6" />}
@@ -136,14 +172,22 @@ const Post = ({ post }) => {
         </div>
         
         {/* Likes count */}
-        <p className="font-medium text-gray-900 mb-1">{likes} likes</p>
+        <p className={`font-medium mb-1 transition-colors duration-300 ${
+          isDark ? 'text-white' : 'text-gray-900'
+        }`}>{likes} likes</p>
         
         {/* Post caption */}
         <div className="mb-2">
-          <Link to={`/profile/${post.user.id}`} className="font-medium text-gray-900 mr-2">
+          <Link to={`/profile/${post.user.id}`} className={`font-medium mr-2 transition-colors duration-300 ${
+            isDark 
+              ? 'text-white hover:text-primary-400' 
+              : 'text-gray-900 hover:text-primary-600'
+          }`}>
             {post.user.name}
           </Link>
-          <span className="text-gray-700">{post.caption}</span>
+          <span className={`transition-colors duration-300 ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          }`}>{post.caption}</span>
         </div>
         
         {/* Tags */}
@@ -153,7 +197,9 @@ const Post = ({ post }) => {
               <Link 
                 key={tag} 
                 to={`/posts/tags/${tag}`} 
-                className="text-primary-600 text-sm hover:underline"
+                className={`text-sm hover:underline transition-colors duration-300 ${
+                  isDark ? 'text-primary-400' : 'text-primary-600'
+                }`}
               >
                 #{tag}
               </Link>
@@ -162,15 +208,21 @@ const Post = ({ post }) => {
         )}
         
         {/* Post time */}
-        <p className="text-xs text-gray-500">
+        <p className={`text-xs transition-colors duration-300 ${
+          isDark ? 'text-gray-400' : 'text-gray-500'
+        }`}>
           {getRelativeTime(post.timestamp)}
         </p>
       </div>
       
       {/* Comments section */}
       {showComments && (
-        <div className="p-4 border-b">
-          <h4 className="font-medium text-gray-900 mb-3">Comments</h4>
+        <div className={`p-4 border-b transition-colors duration-300 ${
+          isDark ? 'border-gray-700' : 'border-gray-200'
+        }`}>
+          <h4 className={`font-medium mb-3 transition-colors duration-300 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>Comments</h4>
           
           {/* Comment form */}
           <form onSubmit={handleComment} className="flex mb-4">
@@ -179,11 +231,15 @@ const Post = ({ post }) => {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Add a comment..."
-              className="flex-grow border border-gray-300 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className={`flex-grow border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-all duration-300 ${
+                isDark 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+              }`}
             />
             <button 
               type="submit" 
-              className="bg-primary-600 text-white px-4 py-2 rounded-r-lg hover:bg-primary-700 transition-colors"
+              className="bg-primary-600 text-white px-4 py-2 rounded-r-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               disabled={!comment.trim()}
             >
               Post
@@ -203,27 +259,45 @@ const Post = ({ post }) => {
                     />
                   </Link>
                   <div>
-                    <div className="bg-gray-100 px-3 py-2 rounded-lg">
-                      <Link to={`/profile/${comment.user.id}`} className="font-medium text-gray-900 text-sm mr-1">
+                    <div className={`px-3 py-2 rounded-lg transition-colors duration-300 ${
+                      isDark ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
+                      <Link to={`/profile/${comment.user.id}`} className={`font-medium text-sm mr-1 transition-colors duration-300 ${
+                        isDark 
+                          ? 'text-white hover:text-primary-400' 
+                          : 'text-gray-900 hover:text-primary-600'
+                      }`}>
                         {comment.user.name}
                       </Link>
-                      <span className="text-gray-700 text-sm">{comment.text}</span>
+                      <span className={`text-sm transition-colors duration-300 ${
+                        isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>{comment.text}</span>
                     </div>
-                    <div className="flex items-center mt-1 space-x-3 text-xs text-gray-500">
+                    <div className={`flex items-center mt-1 space-x-3 text-xs transition-colors duration-300 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
                       <span>{getRelativeTime(comment.timestamp)}</span>
-                      <button className="hover:text-gray-700">Like</button>
-                      <button className="hover:text-gray-700">Reply</button>
+                      <button className={`transition-colors duration-300 ${
+                        isDark ? 'hover:text-gray-200' : 'hover:text-gray-700'
+                      }`}>Like</button>
+                      <button className={`transition-colors duration-300 ${
+                        isDark ? 'hover:text-gray-200' : 'hover:text-gray-700'
+                      }`}>Reply</button>
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 text-center py-2">No comments yet. Be the first to comment!</p>
+              <p className={`text-center py-2 transition-colors duration-300 ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>No comments yet. Be the first to comment!</p>
             )}
           </div>
           
           {comments.length > 3 && (
-            <Link to={`/posts/${post.id}`} className="block text-center text-primary-600 mt-3 hover:underline">
+            <Link to={`/posts/${post.id}`} className={`block text-center mt-3 hover:underline transition-colors duration-300 ${
+              isDark ? 'text-primary-400' : 'text-primary-600'
+            }`}>
               View all {comments.length} comments
             </Link>
           )}

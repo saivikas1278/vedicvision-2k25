@@ -149,18 +149,18 @@ const ContactPage = () => {
             Our team is ready to assist you with any questions about SportSphere.
           </p>
           <div className="flex justify-center space-x-6">
-            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+            <button className="text-white hover:text-blue-200 transition-colors" aria-label="Follow us on Twitter">
               <FaTwitter size={24} />
-            </a>
-            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+            </button>
+            <button className="text-white hover:text-blue-200 transition-colors" aria-label="Follow us on Facebook">
               <FaFacebook size={24} />
-            </a>
-            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+            </button>
+            <button className="text-white hover:text-blue-200 transition-colors" aria-label="Connect with us on LinkedIn">
               <FaLinkedin size={24} />
-            </a>
-            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+            </button>
+            <button className="text-white hover:text-blue-200 transition-colors" aria-label="Follow us on Instagram">
               <FaInstagram size={24} />
-            </a>
+            </button>
           </div>
         </div>
       </section>

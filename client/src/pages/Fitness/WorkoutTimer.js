@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaStopwatch, FaArrowLeft, FaPlay, FaPause, FaRedo, FaVolumeUp } from 'react-icons/fa';
+import { FaStopwatch, FaArrowLeft, FaPlay, FaPause, FaRedo } from 'react-icons/fa';
 
 const WorkoutTimer = () => {
   const navigate = useNavigate();
@@ -12,18 +12,6 @@ const WorkoutTimer = () => {
   const [rounds, setRounds] = useState(1);
   const [currentRound, setCurrentRound] = useState(1);
   const [timerType, setTimerType] = useState('simple'); // 'simple', 'interval', 'tabata'
-
-  useEffect(() => {
-    let interval = null;
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(timeLeft => timeLeft - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      handleTimerComplete();
-    }
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft]);
 
   const handleTimerComplete = () => {
     // Play sound notification
@@ -53,6 +41,18 @@ const WorkoutTimer = () => {
       alert('Timer Complete!');
     }
   };
+
+  useEffect(() => {
+    let interval = null;
+    if (isRunning && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(timeLeft => timeLeft - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      handleTimerComplete();
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, timeLeft, mode, restTime, workTime, timerType, currentRound, rounds]);
 
   const startTimer = () => {
     if ('Notification' in window && Notification.permission === 'default') {
@@ -170,7 +170,7 @@ const WorkoutTimer = () => {
           <div className="flex justify-center space-x-4">
             <button
               onClick={isRunning ? pauseTimer : startTimer}
-              className={`px-8 py-3 rounded-lg font-semibold text-white text-lg ${
+              className={`px-8 py-3 rounded-lg font-semibold text-white text-lg flex items-center ${
                 isRunning 
                   ? 'bg-yellow-600 hover:bg-yellow-700' 
                   : 'bg-green-600 hover:bg-green-700'
@@ -182,7 +182,7 @@ const WorkoutTimer = () => {
             
             <button
               onClick={resetTimer}
-              className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-lg"
+              className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-lg flex items-center"
             >
               <FaRedo className="mr-2" /> Reset
             </button>

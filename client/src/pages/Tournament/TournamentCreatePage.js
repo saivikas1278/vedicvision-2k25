@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaUpload, FaUserTie, FaInfoCircle, FaClipboardList, FaMedal, FaMoneyBillWave, FaUsers } from 'react-icons/fa';
+import { FaTrophy, FaUpload, FaUserTie, FaInfoCircle, FaClipboardList, FaMedal } from 'react-icons/fa';
 import { showToast } from '../../utils/toast';
 // Import mock auth state for testing
 import mockAuthState from '../../mock/authState';
+import { useDispatch } from 'react-redux';
+import { createTournament } from '../../redux/slices/tournamentSlice';
 
 // Validation schema
 const schema = yup.object().shape({
@@ -49,15 +51,12 @@ const schema = yup.object().shape({
   paymentDetails: yup.string().required('Payment details are required'),
   eligibility: yup.string().required('Eligibility criteria are required'),
   minTeamSize: yup.number().min(1, 'Minimum team size must be at least 1').required('Minimum team size is required'),
-  maxTeamSize: yup.number().min(
-    yup.ref('minTeamSize'),
-    "Maximum team size can't be less than minimum"
-  ).required('Maximum team size is required'),
   requiredDocuments: yup.string()
 });
 
 const TournamentCreatePage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,8 +70,7 @@ const TournamentCreatePage = () => {
       sport: '',
       format: '',
       entryFee: 0,
-      minTeamSize: 5,
-      maxTeamSize: 12
+      minTeamSize: 5
     }
   });
 
@@ -95,14 +93,31 @@ const TournamentCreatePage = () => {
       setIsSubmitting(true);
       
       // In a real app, you would upload the logo file and submit the form data to your API
-      // For this example, we'll just simulate a delay and show a success message
       console.log('Form Data:', data);
       console.log('Logo File:', logoFile);
       
-      // Simulate API call
+      // Prepare tournament data with status and ID
+      const tournamentData = {
+        _id: Date.now().toString(), // Mock ID
+        ...data,
+        name: data.tournamentName, // Ensure we have a 'name' field for consistency
+        status: 'active', // Set status to active
+        registrationOpen: true,
+        logoUrl: logoPreview || null,
+        teamCount: 0,
+        location: data.venueName, // For consistency in display
+        sport: data.sport,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Dispatch to Redux - in a real app this would send to the server
+      // For the mock implementation, we'll use a timeout to simulate API latency
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      showToast('Tournament created successfully! It will be reviewed and published soon.', 'success');
+      // Dispatch the create action
+      dispatch(createTournament(tournamentData));
+      
+      showToast('Tournament published successfully! Players can now register.', 'success');
       reset();
       setLogoFile(null);
       setLogoPreview(null);
@@ -120,14 +135,14 @@ const TournamentCreatePage = () => {
   const sportOptions = ['Basketball', 'Soccer', 'Volleyball', 'Tennis', 'Cricket', 'Hockey', 'Rugby', 'Badminton'];
   
   const formatOptions = {
-    'Basketball': ['5v5', '3v3', 'Knockout', 'League', 'Mixed'],
-    'Soccer': ['11v11', '7v7', '5v5', 'Knockout', 'League'],
-    'Volleyball': ['6v6', '4v4', 'Beach', 'Indoor', 'Mixed'],
-    'Tennis': ['Singles', 'Doubles', 'Mixed Doubles', 'Round Robin'],
-    'Cricket': ['T20', 'ODI', 'Test', 'Knockout'],
-    'Hockey': ['Field Hockey', 'Ice Hockey', 'Knockout', 'League'],
+    'Basketball': ['5v5', '3v3', 'League', 'Knockout', 'Mixed'],
+    'Soccer': ['11v11', '7v7', '5v5', 'League', 'Knockout'],
+    'Volleyball': ['6v6', '4v4', 'Beach', 'Indoor', 'League', 'Knockout', 'Mixed'],
+    'Tennis': ['Singles', 'Doubles', 'Mixed Doubles', 'Round Robin', 'League', 'Knockout'],
+    'Cricket': ['T20', 'ODI', 'Test', 'League', 'Knockout'],
+    'Hockey': ['Field Hockey', 'Ice Hockey', 'League', 'Knockout'],
     'Rugby': ['Union', 'League', 'Sevens', 'Knockout'],
-    'Badminton': ['Singles', 'Doubles', 'Mixed Doubles', 'Team Event']
+    'Badminton': ['Singles', 'Doubles', 'Mixed Doubles', 'Team Event', 'League', 'Knockout']
   };
 
   // Form section component for reusability
@@ -257,7 +272,7 @@ const TournamentCreatePage = () => {
                 type="select"
                 register={register}
                 error={errors.format}
-                options={formatOptions[register('sport').value] || []}
+                options={formatOptions[register('sport').value] || ['League', 'Knockout']}
               />
               
               <InputField
@@ -441,21 +456,13 @@ const TournamentCreatePage = () => {
                 placeholder="Age group, skill level, etc."
               />
               
-              <div className="grid grid-cols-2 gap-4">
+              <div>
                 <InputField
-                  label="Min Team Size *"
+                  label="Team Size *"
                   name="minTeamSize"
                   type="number"
                   register={register}
                   error={errors.minTeamSize}
-                />
-                
-                <InputField
-                  label="Max Team Size *"
-                  name="maxTeamSize"
-                  type="number"
-                  register={register}
-                  error={errors.maxTeamSize}
                 />
               </div>
             </div>

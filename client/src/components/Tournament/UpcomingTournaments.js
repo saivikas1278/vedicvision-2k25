@@ -1,60 +1,89 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt, FaUsers } from 'react-icons/fa';
+import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaUserPlus } from 'react-icons/fa';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import { showToast } from '../../utils/toast';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchTournaments } from '../../redux/slices/tournamentSlice';
 
 const UpcomingTournaments = () => {
-  const [tournaments, setTournaments] = useState([]);
+  const dispatch = useDispatch();
+  const { tournaments, loading } = useSelector((state) => state.tournaments);
   const [isLoading, setIsLoading] = useState(true);
+  const [upcomingTournaments, setUpcomingTournaments] = useState([]);
 
   useEffect(() => {
-    const fetchUpcomingTournaments = async () => {
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Mock data - in a real app, this would come from an API
-        setTournaments([
-          {
-            id: 1,
-            name: 'Summer Basketball Championship',
-            startDate: '2025-08-20T10:00:00',
-            location: 'Central City Sports Complex',
-            teamCount: 16,
-            sport: 'Basketball',
-            registrationOpen: true
-          },
-          {
-            id: 2,
-            name: 'Regional Soccer Tournament',
-            startDate: '2025-09-05T09:00:00',
-            location: 'Memorial Stadium',
-            teamCount: 24,
-            sport: 'Soccer',
-            registrationOpen: true
-          },
-          {
-            id: 3,
-            name: 'Winter Basketball League',
-            startDate: '2025-10-15T11:00:00',
-            location: 'Downtown Indoor Arena',
-            teamCount: 12,
-            sport: 'Basketball',
-            registrationOpen: false
-          }
-        ]);
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching upcoming tournaments:', error);
-        showToast('Failed to load upcoming tournaments', 'error');
-        setIsLoading(false);
-      }
-    };
+    // If redux has tournaments, use them
+    if (tournaments && tournaments.length > 0) {
+      // Filter for upcoming and active tournaments
+      const upcoming = tournaments.filter(t => 
+        t.status === 'active' || t.registrationOpen === true
+      ).slice(0, 3); // Just take the first 3 for the component
+      
+      setUpcomingTournaments(upcoming);
+      setIsLoading(false);
+    } else {
+      // Otherwise fetch from API/use mock data
+      dispatch(fetchTournaments());
+      
+      // Mock data for initial render
+      const fetchUpcomingTournaments = async () => {
+        try {
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Mock data - in a real app, this would come from an API
+          setUpcomingTournaments([
+            {
+              id: 1,
+              name: 'Summer Basketball Championship',
+              startDate: '2025-08-20T10:00:00',
+              location: 'Central City Sports Complex',
+              teamCount: 16,
+              sport: 'Basketball',
+              registrationOpen: true,
+              status: 'active'
+            },
+            {
+              id: 2,
+              name: 'Regional Soccer Tournament',
+              startDate: '2025-09-05T09:00:00',
+              location: 'Memorial Stadium',
+              teamCount: 24,
+              sport: 'Soccer',
+              registrationOpen: true,
+              status: 'active'
+            },
+            {
+              id: 3,
+              name: 'Winter Basketball League',
+              startDate: '2025-10-15T11:00:00',
+              location: 'Downtown Indoor Arena',
+              teamCount: 12,
+              sport: 'Basketball',
+              registrationOpen: false,
+              status: 'coming_soon'
+            }
+          ]);
+          
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error fetching upcoming tournaments:', error);
+          showToast('Failed to load upcoming tournaments', 'error');
+          setIsLoading(false);
+        }
+      };
 
-    fetchUpcomingTournaments();
-  }, []);
+      fetchUpcomingTournaments();
+    }
+  }, [dispatch, tournaments]);
+
+  // Handle tournament registration
+  const handleRegister = (tournamentId, tournamentName) => {
+    // In a real app, this would dispatch a register action
+    showToast(`Registration request sent for ${tournamentName}`, 'success');
+    console.log('Registering for tournament:', tournamentId);
+  };
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -81,50 +110,68 @@ const UpcomingTournaments = () => {
 
   return (
     <div className="space-y-4">
-      {tournaments.map((tournament) => (
-        <div 
-          key={tournament.id}
-          className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
-        >
-          <div className="flex items-start">
-            <div className="p-2 bg-blue-50 rounded-full mr-3">
-              <FaTrophy className="text-blue-500" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-lg text-gray-800">{tournament.name}</h3>
-              <div className="mt-2 space-y-1">
-                <div className="flex items-center text-sm text-gray-600">
-                  <FaCalendarAlt className="mr-2 text-gray-400" />
-                  {formatDate(tournament.startDate)}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <FaMapMarkerAlt className="mr-2 text-gray-400" />
-                  {tournament.location}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <FaUsers className="mr-2 text-gray-400" />
-                  {tournament.teamCount} Teams
-                </div>
+      {upcomingTournaments.map((tournament) => {
+        const tournamentId = tournament._id || tournament.id;
+        const tournamentName = tournament.name || tournament.tournamentName;
+        const location = tournament.location || tournament.venueName;
+        const isActive = tournament.status === 'active' || tournament.registrationOpen === true;
+        
+        return (
+          <div 
+            key={tournamentId}
+            className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+          >
+            <div className="flex items-start">
+              <div className="p-2 bg-blue-50 rounded-full mr-3">
+                <FaTrophy className="text-blue-500" />
               </div>
-              <div className="mt-3 flex justify-between items-center">
-                <span className={`text-xs font-medium px-2 py-1 rounded ${
-                  tournament.registrationOpen 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {tournament.registrationOpen ? 'Registration Open' : 'Coming Soon'}
-                </span>
-                <Link 
-                  to={`/tournaments/${tournament.id}`}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  View Details
-                </Link>
+              <div className="flex-1">
+                <h3 className="font-medium text-lg text-gray-800">{tournamentName}</h3>
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <FaCalendarAlt className="mr-2 text-gray-400" />
+                    {formatDate(tournament.startDate)}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <FaMapMarkerAlt className="mr-2 text-gray-400" />
+                    {location}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <FaUsers className="mr-2 text-gray-400" />
+                    {tournament.teamCount || 0} Teams
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-between items-center">
+                  <span className={`text-xs font-medium px-2 py-1 rounded ${
+                    isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {isActive ? 'Registration Open' : 'Coming Soon'}
+                  </span>
+                  <div className="flex space-x-2">
+                    {isActive && (
+                      <button
+                        onClick={() => handleRegister(tournamentId, tournamentName)}
+                        className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
+                      >
+                        <FaUserPlus className="mr-1" size={10} />
+                        Register Here
+                      </button>
+                    )}
+                    <Link 
+                      to={`/tournaments/${tournamentId}`}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      View Details
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       <div className="text-center mt-4">
         <Link 
           to="/tournaments"

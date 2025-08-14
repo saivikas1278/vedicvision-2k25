@@ -1,7 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import GlareHover from '../components/UI/GlareHover';
+import AnimatedCard from '../components/UI/AnimatedCard';
+import ScrollReveal from '../components/UI/ScrollReveal';
+import GradientButton from '../components/UI/GradientButton';
+import MagneticButton from '../components/UI/MagneticButton';
+import ParticleBackground from '../components/UI/ParticleBackground';
+import FloatingElements from '../components/UI/FloatingElements';
 
 const LandingPage = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -76,161 +81,248 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated background elements */}
+      <ParticleBackground particleCount={30} color="#3b82f6" />
+      <FloatingElements />
+      
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600 text-white">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <section className="relative bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white min-h-screen flex items-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full animate-float"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full animate-float" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-pink-500/10 rounded-full animate-float" style={{animationDelay: '4s'}}></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
-              SportSphere
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-primary-100 animate-fade-in animation-delay-200">
-              Unified Multi-Sport Scoring, Match Management & Fitness Hub
-            </p>
-            <p className="text-lg mb-12 text-primary-100 max-w-3xl mx-auto animate-fade-in animation-delay-400">
-              Connect, compete, and excel in your favorite sports with our comprehensive platform 
-              for tournament management, live scoring, video sharing, and fitness tracking.
-            </p>
+            <ScrollReveal direction="up" distance={100} duration={800}>
+              <h1 className="text-6xl md:text-8xl font-bold mb-6 animate-gradient bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                SportSphere
+              </h1>
+            </ScrollReveal>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in animation-delay-600">
-              {isAuthenticated ? (
-                <Link
-                  to="/dashboard"
-                  className="btn-primary btn bg-white text-primary-600 hover:bg-gray-100 transform hover:scale-105 transition-all duration-200"
-                >
-                  Go to Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    to="/register"
-                    className="btn-primary btn bg-white text-primary-600 hover:bg-gray-100 transform hover:scale-105 transition-all duration-200"
+            <ScrollReveal direction="up" distance={50} duration={800} delay={200}>
+              <p className="text-2xl md:text-3xl mb-8 text-gray-200 font-light">
+                Unified Multi-Sport Scoring & Fitness Hub
+              </p>
+            </ScrollReveal>
+            
+            <ScrollReveal direction="up" distance={30} duration={800} delay={400}>
+              <p className="text-lg mb-12 text-gray-300 max-w-4xl mx-auto leading-relaxed">
+                Connect, compete, and excel in your favorite sports with our comprehensive platform 
+                for tournament management, live scoring, video sharing, and fitness tracking.
+              </p>
+            </ScrollReveal>
+            
+            <ScrollReveal direction="up" distance={20} duration={800} delay={600}>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                {isAuthenticated ? (
+                  <GradientButton 
+                    as={Link}
+                    to="/dashboard"
+                    size="lg"
+                    className="transform hover:scale-110 transition-all duration-300"
                   >
-                    Get Started Free
-                  </Link>
-                  <Link
-                    to="/tournaments"
-                    className="btn btn-outline border-white text-white hover:bg-white hover:text-primary-600 transform hover:scale-105 transition-all duration-200"
-                  >
-                    Explore Tournaments
-                  </Link>
-                </>
-              )}
-            </div>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    Go to Dashboard
+                  </GradientButton>
+                ) : (
+                  <>
+                    <GradientButton 
+                      as={Link}
+                      to="/register"
+                      size="lg"
+                      className="transform hover:scale-110 transition-all duration-300"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Get Started Free
+                    </GradientButton>
+                    
+                    <MagneticButton 
+                      as={Link}
+                      to="/tournaments"
+                      className="px-8 py-4 border-2 border-white/30 text-white hover:border-white/60 rounded-xl backdrop-blur-sm bg-white/10 font-semibold transition-all duration-300"
+                    >
+                      Explore Tournaments
+                    </MagneticButton>
+                  </>
+                )}
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+      <section className="py-20 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <ScrollReveal direction="up" duration={600}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {stats.map((stat, index) => (
+                <AnimatedCard 
+                  key={index} 
+                  className="text-center p-8 bg-white/80 backdrop-blur-sm border border-gray-200/50"
+                  tiltEffect={true}
+                  glowEffect={true}
+                >
+                  <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+                    {stat.number}
+                  </div>
+                  <div className="text-gray-600 font-medium">{stat.label}</div>
+                </AnimatedCard>
+              ))}
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need for Sports Management
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From organizing tournaments to tracking fitness goals, SportSphere provides 
-              all the tools you need in one unified platform.
-            </p>
-          </div>
+      <section className="py-24 bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 right-10 w-64 h-64 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full animate-pulse-slow"></div>
+          <div className="absolute bottom-10 left-10 w-80 h-80 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <ScrollReveal direction="up" duration={800}>
+            <div className="text-center mb-20">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                Everything You Need for 
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Sports Management</span>
+              </h2>
+              <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+                From organizing tournaments to tracking fitness goals, SportSphere provides 
+                all the tools you need in one unified platform.
+              </p>
+            </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <GlareHover
-                key={index}
-                glareColor="#3B82F6"
-                glareOpacity={0.2}
-                glareAngle={-30}
-                glareSize={300}
-                transitionDuration={800}
-                playOnce={false}
-                className="h-full"
+              <ScrollReveal 
+                key={index} 
+                direction="up" 
+                duration={600} 
+                delay={index * 100}
               >
-                <div
-                  className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 animate-fade-in h-full"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                <AnimatedCard
+                  className="h-full bg-white/70 backdrop-blur-sm border border-gray-200/50 p-8 group"
+                  tiltEffect={true}
+                  glowEffect={true}
+                  hoverScale={true}
+                  borderGlow={true}
                 >
-                  <div className="text-primary-600 mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  <div className="text-blue-600 mb-6 transform group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                      {React.cloneElement(feature.icon, { className: "w-8 h-8 text-white" })}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </div>
-              </GlareHover>
+                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                </AnimatedCard>
+              </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* Sports Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Multi-Sport Support
-            </h2>
-            <p className="text-xl text-gray-600">
-              Comprehensive support for all your favorite sports
-            </p>
-          </div>
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/50"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <ScrollReveal direction="up" duration={800}>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                Multi-Sport <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Support</span>
+              </h2>
+              <p className="text-xl text-gray-600">
+                Comprehensive support for all your favorite sports
+              </p>
+            </div>
+          </ScrollReveal>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {sports.map((sport, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-primary-50 to-purple-50 p-4 rounded-lg text-center hover:from-primary-100 hover:to-purple-100 transition-colors duration-300 animate-bounce-slow"
-                style={{ animationDelay: `${index * 50}ms` }}
+              <ScrollReveal 
+                key={index} 
+                direction="up" 
+                duration={400} 
+                delay={index * 50}
               >
-                <span className="text-sm font-medium text-gray-800">{sport}</span>
-              </div>
+                <AnimatedCard 
+                  className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 text-center group border border-gray-200/50"
+                  hoverScale={true}
+                  glowEffect={true}
+                >
+                  <span className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors duration-300">
+                    {sport}
+                  </span>
+                  <div className="mt-2 w-8 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+                </AnimatedCard>
+              </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Get Started?
-          </h2>
-          <p className="text-xl mb-8 text-primary-100 max-w-2xl mx-auto">
-            Join thousands of athletes, teams, and organizers who are already using 
-            SportSphere to manage their sports activities.
-          </p>
+      <section className="py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-pink-600/10"></div>
+          <div className="absolute top-20 right-20 w-72 h-72 bg-blue-500/10 rounded-full animate-pulse-slow"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <ScrollReveal direction="up" duration={800}>
+            <h2 className="text-4xl md:text-5xl font-bold mb-8">
+              Ready to Get <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Started?</span>
+            </h2>
+          </ScrollReveal>
+          
+          <ScrollReveal direction="up" duration={800} delay={200}>
+            <p className="text-xl mb-12 text-gray-200 max-w-3xl mx-auto leading-relaxed">
+              Join thousands of athletes, teams, and organizers who are already using 
+              SportSphere to manage their sports activities.
+            </p>
+          </ScrollReveal>
           
           {!isAuthenticated && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/register"
-                className="btn bg-white text-primary-600 hover:bg-gray-100 transform hover:scale-105 transition-all duration-200"
-              >
-                Sign Up Free
-              </Link>
-              <Link
-                to="/contact"
-                className="btn border-white text-white hover:bg-white hover:text-primary-600 transition-all duration-200"
-              >
-                Contact Sales
-              </Link>
-            </div>
+            <ScrollReveal direction="up" duration={800} delay={400}>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <GradientButton 
+                  as={Link}
+                  to="/register"
+                  size="lg"
+                  className="transform hover:scale-110 transition-all duration-300"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  Sign Up Free
+                </GradientButton>
+                
+                <MagneticButton 
+                  as={Link}
+                  to="/contact"
+                  className="px-8 py-4 border-2 border-white/30 text-white hover:border-white/60 rounded-xl backdrop-blur-sm bg-white/10 font-semibold transition-all duration-300"
+                >
+                  Contact Sales
+                </MagneticButton>
+              </div>
+            </ScrollReveal>
           )}
         </div>
       </section>

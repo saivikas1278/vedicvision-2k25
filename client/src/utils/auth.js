@@ -2,11 +2,9 @@ import axios from 'axios';
 
 // Set auth token for all requests
 export const setAuthToken = (token) => {
-  if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete axios.defaults.headers.common['Authorization'];
-  }
+  // No longer need to set on axios.defaults as api.js interceptor handles this
+  // Just keeping the function for compatibility
+  return token;
 };
 
 // Get token from localStorage

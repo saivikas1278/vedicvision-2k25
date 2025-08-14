@@ -4,8 +4,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Theme Provider
+import { ThemeProvider } from './context/ThemeContext';
+
 // Layout Components
-import Navbar from './components/Layout/Navbar';
+import NavbarSwitcher from './components/Layout/NavbarSwitcher';
 import Footer from './components/Layout/Footer';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 
@@ -33,6 +36,16 @@ import ContactPage from './pages/ContactPage';
 import CricketHub from './pages/Cricket/CricketHub';
 import CricketCreateMatch from './pages/Cricket/CricketCreateMatch';
 
+// Match pages
+import CreateMatch from './pages/Matches/CreateMatch';
+import TeamSelection from './pages/Matches/TeamSelection';
+import CricketScoring from './pages/Matches/Scoring/CricketScoring';
+import BadmintonScoring from './pages/Matches/Scoring/BadmintonScoring';
+import VolleyballScoring from './pages/Matches/Scoring/VolleyballScoring';
+import KabaddiScoring from './pages/Matches/Scoring/KabaddiScoring';
+import MatchesHub from './pages/Matches/MatchesHub';
+import MatchDetails from './pages/Matches/MatchDetails';
+
 // Protected Route Component
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 
@@ -57,17 +70,23 @@ function App() {
   useEffect(() => {
     // Load user on app start
     dispatch(loadUser());
+  }, [dispatch]);
 
-    // Initialize socket connection if authenticated
-    if (isAuthenticated) {
+  useEffect(() => {
+    // Initialize socket connection only when authenticated
+    if (isAuthenticated && !loading) {
+      console.log('[App] User is authenticated, initializing socket connection');
       initializeSocket();
+    } else if (!isAuthenticated && !loading) {
+      console.log('[App] User not authenticated, disconnecting socket');
+      disconnectSocket();
     }
 
     // Cleanup socket on unmount
     return () => {
       disconnectSocket();
     };
-  }, [dispatch, isAuthenticated]);
+  }, [isAuthenticated, loading]);
 
   if (loading) {
     return (
@@ -78,112 +97,166 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="flex-1">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          
-          {/* Auth Routes */}
-          <Route 
-            path="/login" 
-            element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} 
-          />
-          <Route 
-            path="/register" 
-            element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} 
-          />
-          
-          {/* Protected Routes */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Tournament Routes */}
-          <Route path="/tournaments" element={<TournamentHub />} />
-          <Route path="/tournaments/create" element={<TournamentCreatePage />} />
-          <Route path="/tournaments/:id" element={<TournamentDetails />} />
-          <Route 
-            path="/tournaments/:id/live" 
-            element={
-              <ProtectedRoute>
-                <LiveTournamentBoard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Posts Routes */}
-          <Route path="/posts" element={<PostsHub />} />
-          <Route path="/posts/:id" element={<PostDetails />} />
-          
-          {/* Legacy Routes - Redirect to new Posts routes */}
-          <Route path="/videos" element={<Navigate to="/posts?type=video" replace />} />
-          <Route path="/videos/:id" element={<DynamicRedirect pattern="/videos/:id" replacement="/posts/:id" />} />
-          <Route path="/photos" element={<Navigate to="/posts?type=photo" replace />} />
-          <Route path="/photos/:id" element={<DynamicRedirect pattern="/photos/:id" replacement="/posts/:id" />} />
-          
-          {/* Fitness Routes */}
-          <Route path="/fitness" element={<FitnessHub />} />
-          <Route path="/fitness/workout-builder" element={<WorkoutBuilder />} />
-          <Route path="/fitness/timer" element={<WorkoutTimer />} />
-          <Route path="/fitness/progress" element={<ProgressTracker />} />
-          <Route path="/fitness/nutrition" element={<NutritionTracker />} />
-          <Route path="/fitness/:id" element={<FitnessDetails />} />
-          
-          {/* User Routes */}
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/settings" 
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Cricket Routes */}
-          <Route path="/cricket" element={<CricketHub />} />
-          <Route path="/cricket/create" element={<CricketCreateMatch />} />
-          <Route path="/cricket/create-match" element={<CricketCreateMatch />} />
-          <Route path="/cricket/:id" element={<CricketHub />} />
-          <Route path="/cricket/:id/score" element={<CricketHub />} />
-          <Route path="/cricket/:id/edit" element={<CricketCreateMatch />} />
-          
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </main>
-      <Footer />
-      
-      {/* Toast notifications */}
-      <ToastContainer
-        position="top-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
-    </div>
+    <ThemeProvider>
+      <div className="min-h-screen transition-colors duration-300 bg-white dark:bg-gray-900">
+        <NavbarSwitcher />
+        <main className="flex-1">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            
+            {/* Auth Routes */}
+            <Route 
+              path="/login" 
+              element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} 
+            />
+            <Route 
+              path="/register" 
+              element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} 
+            />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Tournament Routes */}
+            <Route path="/tournaments" element={<TournamentHub />} />
+            <Route path="/tournaments/create" element={<TournamentCreatePage />} />
+            <Route path="/tournaments/:id" element={<TournamentDetails />} />
+            <Route 
+              path="/tournaments/:id/live" 
+              element={
+                <ProtectedRoute>
+                  <LiveTournamentBoard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Match Routes */}
+            <Route path="/matches" element={<MatchesHub />} />
+            <Route path="/matches/:matchId" element={<MatchDetails />} />
+            <Route 
+              path="/matches/create" 
+              element={
+                <ProtectedRoute>
+                  <CreateMatch />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matches/create/:sportId/teams" 
+              element={
+                <ProtectedRoute>
+                  <TeamSelection />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matches/score/cricket/:matchId" 
+              element={
+                <ProtectedRoute>
+                  <CricketScoring />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matches/score/badminton/:matchId" 
+              element={
+                <ProtectedRoute>
+                  <BadmintonScoring />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matches/score/volleyball/:matchId" 
+              element={
+                <ProtectedRoute>
+                  <VolleyballScoring />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matches/score/kabaddi/:matchId" 
+              element={
+                <ProtectedRoute>
+                  <KabaddiScoring />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Posts Routes */}
+            <Route path="/posts" element={<PostsHub />} />
+            <Route path="/posts/:id" element={<PostDetails />} />
+            
+            {/* Legacy Routes - Redirect to new Posts routes */}
+            <Route path="/videos" element={<Navigate to="/posts?type=video" replace />} />
+            <Route path="/videos/:id" element={<DynamicRedirect pattern="/videos/:id" replacement="/posts/:id" />} />
+            <Route path="/photos" element={<Navigate to="/posts?type=photo" replace />} />
+            <Route path="/photos/:id" element={<DynamicRedirect pattern="/photos/:id" replacement="/posts/:id" />} />
+            
+            {/* Fitness Routes */}
+            <Route path="/fitness" element={<FitnessHub />} />
+            <Route path="/fitness/workout-builder" element={<WorkoutBuilder />} />
+            <Route path="/fitness/timer" element={<WorkoutTimer />} />
+            <Route path="/fitness/progress" element={<ProgressTracker />} />
+            <Route path="/fitness/nutrition" element={<NutritionTracker />} />
+            <Route path="/fitness/:id" element={<FitnessDetails />} />
+            
+            {/* User Routes */}
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Cricket Routes */}
+            <Route path="/cricket" element={<CricketHub />} />
+            <Route path="/cricket/create" element={<CricketCreateMatch />} />
+            <Route path="/cricket/create-match" element={<CricketCreateMatch />} />
+            <Route path="/cricket/:id" element={<CricketHub />} />
+            <Route path="/cricket/:id/score" element={<CricketHub />} />
+            <Route path="/cricket/:id/edit" element={<CricketCreateMatch />} />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
+        <Footer />
+        
+        {/* Toast notifications */}
+        <ToastContainer
+          position="top-right"
+          autoClose={4000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
+      </div>
+    </ThemeProvider>
   );
 }
 

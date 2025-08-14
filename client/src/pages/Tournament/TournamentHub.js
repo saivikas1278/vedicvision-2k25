@@ -1,82 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt, FaPlus, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt, FaPlus, FaSearch, FaFilter, FaUserPlus } from 'react-icons/fa';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchTournaments } from '../../redux/slices/tournamentSlice';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
+import { showToast } from '../../utils/toast';
 
 const TournamentHub = () => {
-  const [tournaments, setTournaments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { tournaments, loading } = useSelector((state) => state.tournaments);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSport, setFilterSport] = useState('');
 
   useEffect(() => {
-    // Simulate fetching tournaments from API
-    const fetchTournaments = async () => {
-      try {
-        // In a real app, this would be an API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data
-        setTournaments([
-          {
-            id: 1,
-            name: 'Summer Basketball Championship',
-            sport: 'Basketball',
-            startDate: '2025-08-20',
-            endDate: '2025-08-25',
-            location: 'Central City Sports Complex',
-            organizerName: 'City Sports Association',
-            status: 'Registration Open',
-            teamCount: 16
-          },
-          {
-            id: 2,
-            name: 'Regional Soccer Tournament',
-            sport: 'Soccer',
-            startDate: '2025-09-05',
-            endDate: '2025-09-15',
-            location: 'Memorial Stadium',
-            organizerName: 'Regional Sports League',
-            status: 'Registration Open',
-            teamCount: 24
-          },
-          {
-            id: 3,
-            name: 'Winter Basketball League',
-            sport: 'Basketball',
-            startDate: '2025-10-15',
-            endDate: '2025-12-20',
-            location: 'Downtown Indoor Arena',
-            organizerName: 'Urban Sports Network',
-            status: 'Coming Soon',
-            teamCount: 12
-          }
-        ]);
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching tournaments:', error);
-        setIsLoading(false);
-      }
-    };
+    // Fetch tournaments from Redux
+    dispatch(fetchTournaments());
+  }, [dispatch]);
 
-    fetchTournaments();
-  }, []);
+  // If Redux doesn't have tournaments yet, use mock data
+  useEffect(() => {
+    // Debug: log the tournaments from Redux
+    console.log('Tournaments in Redux store:', tournaments);
+    
+    if (!tournaments || tournaments.length === 0) {
+      // Mock data is handled by the fetchTournaments reducer
+      // It will populate the store with sample data
+    }
+  }, [tournaments]);
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const filteredTournaments = tournaments.filter(tournament => {
-    const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tournament.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tournament.organizerName.toLowerCase().includes(searchTerm.toLowerCase());
+  // Handle tournament registration
+  const handleRegister = (tournamentId, tournamentName) => {
+    // In a real app, this would dispatch a register action
+    showToast(`Registration request sent for ${tournamentName}`, 'success');
+    console.log('Registering for tournament:', tournamentId);
+  };
+
+  const filteredTournaments = tournaments ? tournaments.filter(tournament => {
+    const name = tournament.name || tournament.tournamentName || '';
+    const location = tournament.location || tournament.venueName || '';
+    const organizer = tournament.organizerName || '';
+    
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        organizer.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesSport = filterSport === '' || tournament.sport === filterSport;
     
     return matchesSearch && matchesSport;
-  });
+  }) : [];
 
   const sportOptions = ['Basketball', 'Soccer', 'Volleyball', 'Tennis', 'Cricket'];
 
@@ -129,25 +105,25 @@ const TournamentHub = () => {
         </div>
       </div>
       
-      {isLoading ? (
+      {loading ? (
         <div className="flex justify-center items-center h-64">
           <LoadingSpinner size="lg" />
         </div>
       ) : filteredTournaments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTournaments.map((tournament) => (
-            <div key={tournament.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow">
+            <div key={tournament._id || tournament.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-5">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">{tournament.name}</h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">{tournament.name || tournament.tournamentName}</h2>
                 <div className="mb-4">
                   <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                    tournament.status === 'Registration Open' 
+                    tournament.status === 'active' || tournament.registrationOpen
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {tournament.status}
+                    {tournament.status === 'active' ? 'Active Tournament' : tournament.status || 'Registration Open'}
                   </span>
-                  <span className="ml-2 text-sm text-gray-600">{tournament.teamCount} Teams</span>
+                  <span className="ml-2 text-sm text-gray-600">{tournament.teamCount || 0} Teams</span>
                 </div>
                 
                 <div className="space-y-2 text-sm text-gray-600">
@@ -164,19 +140,30 @@ const TournamentHub = () => {
                   </div>
                   <div className="flex items-start">
                     <FaMapMarkerAlt className="mt-1 mr-2 text-blue-500" />
-                    <span>{tournament.location}</span>
+                    <span>{tournament.location || tournament.venueName}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between">
+              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
                 <span className="text-sm text-gray-600">By {tournament.organizerName}</span>
-                <Link 
-                  to={`/tournaments/${tournament.id}`}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                >
-                  View Details
-                </Link>
+                <div className="flex space-x-2">
+                  {(tournament.status === 'active' || tournament.registrationOpen) && (
+                    <button
+                      onClick={() => handleRegister(tournament._id || tournament.id, tournament.name || tournament.tournamentName)}
+                      className="text-sm px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
+                    >
+                      <FaUserPlus className="mr-1" size={12} />
+                      Register Here
+                    </button>
+                  )}
+                  <Link 
+                    to={`/tournaments/${tournament._id || tournament.id}`}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    View Details
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

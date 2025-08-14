@@ -1,1 +1,13 @@
-export default { isAuthenticated: true, user: { name: 'Test User', email: 'test@example.com' } };
+const authState = { 
+  isAuthenticated: true, 
+  user: { 
+    id: '1',
+    firstName: 'Test', 
+    lastName: 'User',
+    email: 'test@example.com',
+    role: 'player',
+    avatar: null,
+    isVerified: true
+  } 
+};
+export default authState;

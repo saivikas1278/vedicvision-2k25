@@ -5,9 +5,11 @@ import { FaSearch, FaFilter, FaFire, FaClock, FaTrophy, FaChevronDown, FaImage, 
 import Post from '../../components/Posts/Post';
 import PostUploadForm from '../../components/Posts/PostUploadForm';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
+import { useTheme } from '../../context/ThemeContext';
 
 const PostsHub = () => {
-  const { isAuthenticated, user } = useSelector(state => state.auth);
+  const { isAuthenticated } = useSelector(state => state.auth);
+  const { isDark } = useTheme();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const typeParam = searchParams.get('type');
@@ -315,17 +317,29 @@ const PostsHub = () => {
   ];
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-10">
+    <div className={`min-h-screen pb-10 transition-colors duration-300 ${
+      isDark 
+        ? 'bg-gray-900' 
+        : 'bg-gray-50'
+    }`}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Sports Feed</h1>
-            <p className="text-gray-600">Share and discover sports moments</p>
+            <h1 className={`text-3xl font-bold transition-colors duration-300 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>Sports Feed</h1>
+            <p className={`transition-colors duration-300 ${
+              isDark ? 'text-gray-300' : 'text-gray-600'
+            }`}>Share and discover sports moments</p>
           </div>
           
           <button 
-            className="md:hidden flex items-center space-x-1 bg-white p-2 rounded-full shadow-sm text-gray-700"
+            className={`md:hidden flex items-center space-x-1 p-2 rounded-full shadow-sm transition-all duration-300 ${
+              isDark 
+                ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <FaFilter />
@@ -338,12 +352,18 @@ const PostsHub = () => {
           <div className="flex space-x-4 mb-4">
             <div className="flex-grow relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="text-gray-400" />
+                <FaSearch className={`transition-colors duration-300 ${
+                  isDark ? 'text-gray-400' : 'text-gray-400'
+                }`} />
               </div>
               <input
                 type="text"
                 placeholder="Search posts, users, or tags..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                }`}
                 value={searchTerm}
                 onChange={handleSearch}
               />
@@ -351,7 +371,11 @@ const PostsHub = () => {
             
             {/* Sport Filter */}
             <select 
-              className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
+                isDark 
+                  ? 'bg-gray-800 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               value={filter}
               onChange={(e) => handleFilterChange(e.target.value)}
             >
@@ -364,7 +388,11 @@ const PostsHub = () => {
             
             {/* Sort Options */}
             <select 
-              className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
+                isDark 
+                  ? 'bg-gray-800 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               value={sort}
               onChange={(e) => handleSortChange(e.target.value)}
             >
@@ -377,15 +405,19 @@ const PostsHub = () => {
           </div>
           
           {/* Media Type Filters */}
-          <div className="flex bg-white rounded-lg shadow-sm p-1">
+          <div className={`flex rounded-lg shadow-sm p-1 transition-colors duration-300 ${
+            isDark ? 'bg-gray-800' : 'bg-white'
+          }`}>
             {mediaTypeFilters.map(option => (
               <button
                 key={option.value}
                 onClick={() => handleMediaTypeChange(option.value)}
-                className={`flex-1 py-2 px-4 rounded-md flex items-center justify-center space-x-1 ${
+                className={`flex-1 py-2 px-4 rounded-md flex items-center justify-center space-x-1 transition-all duration-300 ${
                   mediaTypeFilter === option.value
                     ? 'bg-primary-100 text-primary-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    : isDark 
+                      ? 'text-gray-300 hover:bg-gray-700' 
+                      : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 {option.icon}
@@ -397,15 +429,23 @@ const PostsHub = () => {
         
         {/* Search and Filters - Mobile */}
         {showFilters && (
-          <div className="md:hidden space-y-3 mb-6 bg-white p-4 rounded-lg shadow-sm">
+          <div className={`md:hidden space-y-3 mb-6 p-4 rounded-lg shadow-sm transition-colors duration-300 ${
+            isDark ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="text-gray-400" />
+                <FaSearch className={`transition-colors duration-300 ${
+                  isDark ? 'text-gray-400' : 'text-gray-400'
+                }`} />
               </div>
               <input
                 type="text"
                 placeholder="Search posts, users, or tags..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                }`}
                 value={searchTerm}
                 onChange={handleSearch}
               />
@@ -413,16 +453,24 @@ const PostsHub = () => {
             
             {/* Media Type Filters */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Media type</label>
-              <div className="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-lg">
+              <label className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Media type</label>
+              <div className={`grid grid-cols-3 gap-1 p-1 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 {mediaTypeFilters.map(option => (
                   <button
                     key={option.value}
                     onClick={() => handleMediaTypeChange(option.value)}
-                    className={`py-1 px-2 rounded-md flex items-center justify-center text-sm ${
+                    className={`py-1 px-2 rounded-md flex items-center justify-center text-sm transition-all duration-300 ${
                       mediaTypeFilter === option.value
-                        ? 'bg-white shadow-sm font-medium text-primary-700'
-                        : 'text-gray-600'
+                        ? isDark 
+                          ? 'bg-gray-600 shadow-sm font-medium text-primary-400'
+                          : 'bg-white shadow-sm font-medium text-primary-700'
+                        : isDark 
+                          ? 'text-gray-300' 
+                          : 'text-gray-600'
                     }`}
                   >
                     {option.icon && <span className="mr-1">{option.icon}</span>}
@@ -434,9 +482,15 @@ const PostsHub = () => {
             
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Filter by sport</label>
+                <label className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Filter by sport</label>
                 <select 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className={`block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                   value={filter}
                   onChange={(e) => handleFilterChange(e.target.value)}
                 >
@@ -449,9 +503,15 @@ const PostsHub = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sort by</label>
+                <label className={`block text-sm font-medium mb-1 transition-colors duration-300 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Sort by</label>
                 <select 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className={`block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-300 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                   value={sort}
                   onChange={(e) => handleSortChange(e.target.value)}
                 >
@@ -483,12 +543,22 @@ const PostsHub = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <FaSearch className="text-gray-400 text-2xl" />
+          <div className={`rounded-xl shadow-md p-8 text-center transition-colors duration-300 ${
+            isDark ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 transition-colors duration-300 ${
+              isDark ? 'bg-gray-700' : 'bg-gray-100'
+            }`}>
+              <FaSearch className={`text-2xl transition-colors duration-300 ${
+                isDark ? 'text-gray-400' : 'text-gray-400'
+              }`} />
             </div>
-            <h3 className="text-xl font-medium text-gray-700 mb-2">No posts found</h3>
-            <p className="text-gray-500 mb-6">
+            <h3 className={`text-xl font-medium mb-2 transition-colors duration-300 ${
+              isDark ? 'text-gray-200' : 'text-gray-700'
+            }`}>No posts found</h3>
+            <p className={`mb-6 transition-colors duration-300 ${
+              isDark ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               {searchTerm
                 ? `We couldn't find any posts matching "${searchTerm}"`
                 : filter !== 'all'
