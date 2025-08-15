@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaCamera, FaVideo, FaTimesCircle, FaTags, FaMapMarkerAlt, FaImage, FaFileVideo, FaGlobeAmericas, FaUsers, FaLock, FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { createPost } from '../../redux/slices/postSlice';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import GradientButton from '../UI/GradientButton';
@@ -118,12 +118,20 @@ const PostUploadForm = ({ onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('[PostUploadForm] Submit button clicked');
+    console.log('[PostUploadForm] Form data:', formData);
+    console.log('[PostUploadForm] Selected files:', selectedFiles);
+    console.log('[PostUploadForm] User:', user);
+    console.log('[PostUploadForm] Loading state:', loading);
+    
     if (!formData.title.trim()) {
+      console.log('[PostUploadForm] Validation failed: No title');
       toast.error('Please enter a title for your post');
       return;
     }
 
     if (!formData.content.trim()) {
+      console.log('[PostUploadForm] Validation failed: No content');
       toast.error('Please enter some content for your post');
       return;
     }
@@ -135,8 +143,12 @@ const PostUploadForm = ({ onSuccess }) => {
         videos: selectedFiles.videos
       };
 
+      console.log('[PostUploadForm] Sending post data:', postData);
+      console.log('[PostUploadForm] Dispatching createPost action...');
+      
       const result = await dispatch(createPost(postData)).unwrap();
       
+      console.log('[PostUploadForm] Post created successfully:', result);
       toast.success('Post created successfully!');
       
       // Reset form
@@ -156,6 +168,7 @@ const PostUploadForm = ({ onSuccess }) => {
         onSuccess(result.data);
       }
     } catch (error) {
+      console.error('[PostUploadForm] Error creating post:', error);
       toast.error(error || 'Failed to create post');
     }
   };

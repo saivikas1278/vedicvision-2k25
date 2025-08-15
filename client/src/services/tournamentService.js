@@ -33,32 +33,50 @@ const tournamentService = {
   },
 
   // Register team for tournament
-  registerTeam: async (tournamentId, teamId) => {
-    const response = await api.post(`/tournaments/${tournamentId}/register`, { teamId });
+  registerTeam: async (tournamentId, teamData) => {
+    const response = await api.post(`/tournaments/${tournamentId}/register`, teamData);
     return response;
   },
 
   // Unregister team from tournament
-  unregisterTeam: async (tournamentId, teamId) => {
-    const response = await api.delete(`/tournaments/${tournamentId}/register/${teamId}`);
+  unregisterTeam: async (tournamentId) => {
+    const response = await api.delete(`/tournaments/${tournamentId}/unregister`);
     return response;
   },
 
-  // Generate tournament bracket
-  generateBracket: async (tournamentId) => {
-    const response = await api.post(`/tournaments/${tournamentId}/generate-bracket`);
-    return response;
-  },
-
-  // Start tournament
+  // Start tournament (Organizer only)
   startTournament: async (tournamentId) => {
     const response = await api.post(`/tournaments/${tournamentId}/start`);
     return response;
   },
 
-  // End tournament
-  endTournament: async (tournamentId) => {
-    const response = await api.post(`/tournaments/${tournamentId}/end`);
+  // Get tournament schedule
+  getTournamentSchedule: async (tournamentId) => {
+    const response = await api.get(`/tournaments/${tournamentId}/schedule`);
+    return response;
+  },
+
+  // Update match result
+  updateMatchResult: async (tournamentId, matchId, resultData) => {
+    const response = await api.put(`/tournaments/${tournamentId}/matches/${matchId}/result`, resultData);
+    return response;
+  },
+
+  // Get tournament standings
+  getStandings: async (tournamentId) => {
+    const response = await api.get(`/tournaments/${tournamentId}/standings`);
+    return response;
+  },
+
+  // Approve team registration (Organizer only)
+  approveTeamRegistration: async (tournamentId, teamId) => {
+    const response = await api.put(`/tournaments/${tournamentId}/registrations/${teamId}/approve`);
+    return response;
+  },
+
+  // Reject team registration (Organizer only)
+  rejectTeamRegistration: async (tournamentId, teamId) => {
+    const response = await api.put(`/tournaments/${tournamentId}/registrations/${teamId}/reject`);
     return response;
   },
 

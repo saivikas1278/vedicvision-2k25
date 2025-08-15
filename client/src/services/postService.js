@@ -15,34 +15,44 @@ const postService = {
 
   // Create new post
   createPost: async (postData) => {
+    console.log('[postService] Creating post with data:', postData);
+    
     const formData = new FormData();
     
     // Add text fields
     Object.keys(postData).forEach(key => {
       if (key !== 'images' && key !== 'videos') {
+        console.log(`[postService] Adding field ${key}:`, postData[key]);
         formData.append(key, postData[key]);
       }
     });
 
     // Add images
-    if (postData.images) {
+    if (postData.images && postData.images.length > 0) {
+      console.log(`[postService] Adding ${postData.images.length} images`);
       postData.images.forEach((image, index) => {
+        console.log(`[postService] Adding image ${index}:`, image.name);
         formData.append('images', image);
       });
     }
 
     // Add videos
-    if (postData.videos) {
+    if (postData.videos && postData.videos.length > 0) {
+      console.log(`[postService] Adding ${postData.videos.length} videos`);
       postData.videos.forEach((video, index) => {
+        console.log(`[postService] Adding video ${index}:`, video.name);
         formData.append('videos', video);
       });
     }
 
+    console.log('[postService] Making API call to /posts');
     const response = await api.post('/posts', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
+    console.log('[postService] API response:', response);
     return response;
   },
 

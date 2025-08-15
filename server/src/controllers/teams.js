@@ -76,7 +76,18 @@ export const getTeams = async (req, res, next) => {
 // @access  Public
 export const getTeam = async (req, res, next) => {
   try {
-    const team = await Team.findById(req.params.id)
+    const { id } = req.params;
+    
+    // Validate ObjectId format
+    if (!id || id === 'undefined' || id === '[object Object]' || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      console.error('[getTeam] Invalid team ID:', id);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid team ID format'
+      });
+    }
+
+    const team = await Team.findById(id)
       .populate('captain', 'firstName lastName avatar email')
       .populate('players.user', 'firstName lastName avatar sports')
       .populate('tournament', 'name sport organizer dates status');
@@ -93,6 +104,7 @@ export const getTeam = async (req, res, next) => {
       data: team
     });
   } catch (error) {
+    console.error('[getTeam] Error:', error);
     next(error);
   }
 };

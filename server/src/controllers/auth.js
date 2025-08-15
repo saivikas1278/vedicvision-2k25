@@ -107,9 +107,12 @@ export const register = async (req, res, next) => {
 // @access  Public
 export const login = async (req, res, next) => {
   try {
+    console.log('[LOGIN] Request received:', req.body);
+    
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('[LOGIN] Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -118,27 +121,59 @@ export const login = async (req, res, next) => {
     }
 
     const { email, password } = req.body;
+    console.log('[LOGIN] Looking for user with email:', email);
+    console.log('[LOGIN] Password provided:', password ? `${password.substring(0, 3)}***` : 'NONE');
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
+    console.log('[LOGIN] User found:', user ? 'YES' : 'NO');
+    
+    if (user) {
+      console.log('[LOGIN] User details:', {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        hasPassword: !!user.password,
+        passwordLength: user.password ? user.password.length : 0
+      });
+    }
+    
     if (!user) {
+      console.log('[LOGIN] User not found');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
       });
     }
 
+    if (!user.password) {
+      console.log('[LOGIN] User has no password set');
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+
+    console.log('[LOGIN] Comparing password...');
     // Check if password matches
     const isMatch = await user.comparePassword(password);
+    console.log('[LOGIN] Password match:', isMatch);
+    
     if (!isMatch) {
+      console.log('[LOGIN] Password does not match');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
       });
     }
 
+    // Populate currentTeam before sending response
+    await user.populate('currentTeam', 'name shortName');
+
+    console.log('[LOGIN] Login successful, sending token response');
     sendTokenResponse(user, 200, res);
   } catch (error) {
+    console.error('[LOGIN] Exception:', error);
     next(error);
   }
 };
@@ -163,17 +198,11 @@ export const logout = async (req, res, next) => {
 // @access  Private
 export const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
-    const profile = await Profile.findOne({ user: req.user.id });
-
-    const userData = {
-      ...user.toObject(),
-      profile: profile || null
-    };
+    const user = await User.findById(req.user.id).populate('currentTeam', 'name shortName');
 
     res.status(200).json({
       success: true,
-      data: userData
+      user: user
     });
   } catch (error) {
     next(error);

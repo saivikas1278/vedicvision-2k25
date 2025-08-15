@@ -7,14 +7,22 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
+      console.log('[authSlice] Register attempt with:', userData);
       const response = await authService.register(userData);
-      if (response.token) {
+      console.log('[authSlice] Register response:', response);
+      
+      if (response.success && response.token) {
         localStorage.setItem('token', response.token);
         setAuthToken(response.token);
+        console.log('[authSlice] Registration successful, token stored');
+        return response;
+      } else {
+        console.error('[authSlice] Registration failed - no token in response');
+        return rejectWithValue('Registration failed - no token received');
       }
-      return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      console.error('[authSlice] Registration error:', error);
+      return rejectWithValue(error.response?.data?.error || error.message || 'Registration failed');
     }
   }
 );
@@ -23,14 +31,22 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
+      console.log('[authSlice] Login attempt with:', credentials);
       const response = await authService.login(credentials);
-      if (response.token) {
+      console.log('[authSlice] Login response:', response);
+      
+      if (response.success && response.token) {
         localStorage.setItem('token', response.token);
         setAuthToken(response.token);
+        console.log('[authSlice] Login successful, token stored');
+        return response;
+      } else {
+        console.error('[authSlice] Login failed - no token in response');
+        return rejectWithValue('Login failed - no token received');
       }
-      return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      console.error('[authSlice] Login error:', error);
+      return rejectWithValue(error.response?.data?.error || error.message || 'Login failed');
     }
   }
 );
@@ -45,7 +61,15 @@ export const loadUser = createAsyncThunk(
         setAuthToken(token);
         const response = await authService.getProfile();
         console.log('[authSlice] User profile loaded successfully', response);
-        return response;
+        
+        if (response.success && response.user) {
+          return response;
+        } else {
+          console.error('[authSlice] Profile load failed - invalid response format');
+          localStorage.removeItem('token');
+          setAuthToken();
+          return rejectWithValue('Invalid profile response');
+        }
       }
       // No token found
       console.log('[authSlice] No token found, user not authenticated');
@@ -55,7 +79,7 @@ export const loadUser = createAsyncThunk(
       // If API fails, remove token and log out
       localStorage.removeItem('token');
       setAuthToken();
-      return rejectWithValue(error.response?.data?.message || 'Failed to load user');
+      return rejectWithValue(error.response?.data?.error || error.message || 'Failed to load user');
     }
   }
 );
@@ -139,6 +163,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
+        console.log('[authSlice] Login fulfilled with payload:', action.payload);
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
@@ -146,6 +171,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
+        console.log('[authSlice] Login rejected with error:', action.payload);
         state.loading = false;
         state.error = action.payload;
         state.isAuthenticated = false;
@@ -158,7 +184,7 @@ const authSlice = createSlice({
       })
       .addCase(loadUser.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload) {
+        if (action.payload && action.payload.user) {
           state.isAuthenticated = true;
           state.user = action.payload.user;
         } else {

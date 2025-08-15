@@ -1,8 +1,6 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
-import Notification from '../models/Notification.js';
 import cloudinary from '../config/cloudinary.js';
-import notificationUtils from '../utils/notificationUtils.js';
 
 // @desc    Get all posts with filters
 // @route   GET /api/posts
@@ -129,7 +127,11 @@ export const getPost = async (req, res) => {
 // @access  Private
 export const createPost = async (req, res) => {
   try {
-    const { title, content, type, sport, tags, privacy = 'public' } = req.body;
+    console.log('[createPost] Request body:', req.body);
+    console.log('[createPost] Request files:', req.files);
+    console.log('[createPost] Available files keys:', req.files ? Object.keys(req.files) : 'No files');
+    
+    const { title, content, type, sport, tags, privacy = 'public', location } = req.body;
 
     const postData = {
       title,
@@ -141,56 +143,92 @@ export const createPost = async (req, res) => {
       author: req.user.id
     };
 
+    // Add location if provided
+    if (location) {
+      postData.metadata = {
+        location: {
+          type: 'Point',
+          coordinates: location.coordinates,
+          address: location.address
+        }
+      };
+    }
+
     // Handle file uploads
     if (req.files?.images) {
+      console.log('[createPost] Processing images:', req.files.images);
       const images = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
       postData.images = [];
 
       for (const image of images) {
-        const result = await cloudinary.uploader.upload(image.tempFilePath, {
-          folder: 'posts/images',
-          resource_type: 'image',
-          transformation: [
-            { width: 1200, height: 1200, crop: 'limit' },
-            { quality: 'auto:good' }
-          ]
-        });
+        try {
+          console.log('[createPost] Uploading image:', image.name);
+          const result = await cloudinary.uploader.upload(image.tempFilePath, {
+            folder: 'sportsphere/posts/images',
+            resource_type: 'image'
+          });
 
-        postData.images.push({
-          url: result.secure_url,
-          publicId: result.public_id,
-          alt: title
-        });
+          console.log('[createPost] Image upload result:', {
+            url: result.secure_url,
+            publicId: result.public_id
+          });
+
+          postData.images.push({
+            url: result.secure_url,
+            publicId: result.public_id,
+            alt: title || 'Post image'
+          });
+        } catch (uploadError) {
+          console.error('[createPost] Image upload error:', uploadError);
+          throw new Error(`Failed to upload image: ${uploadError.message}`);
+        }
       }
     }
 
     if (req.files?.videos) {
+      console.log('[createPost] Processing videos:', req.files.videos);
       const videos = Array.isArray(req.files.videos) ? req.files.videos : [req.files.videos];
       postData.videos = [];
 
       for (const video of videos) {
-        const result = await cloudinary.uploader.upload(video.tempFilePath, {
-          folder: 'posts/videos',
-          resource_type: 'video',
-          transformation: [
-            { width: 1280, height: 720, crop: 'limit' },
-            { quality: 'auto:good' }
-          ]
-        });
+        try {
+          console.log('[createPost] Uploading video:', video.name);
+          const result = await cloudinary.uploader.upload(video.tempFilePath, {
+            folder: 'sportsphere/posts/videos',
+            resource_type: 'video'
+          });
 
-        postData.videos.push({
-          url: result.secure_url,
-          publicId: result.public_id,
-          thumbnail: result.secure_url.replace('.mp4', '.jpg'),
-          duration: result.duration
-        });
+          console.log('[createPost] Video upload result:', {
+            url: result.secure_url,
+            publicId: result.public_id
+          });
+
+          postData.videos.push({
+            url: result.secure_url,
+            publicId: result.public_id,
+            thumbnail: result.secure_url.replace(/\.(mp4|mov|avi)$/, '.jpg'),
+            duration: result.duration
+          });
+        } catch (uploadError) {
+          console.error('[createPost] Video upload error:', uploadError);
+          throw new Error(`Failed to upload video: ${uploadError.message}`);
+        }
       }
     }
+
+    console.log('[createPost] Final post data:', postData);
 
     const post = new Post(postData);
     await post.save();
 
     await post.populate('author', 'firstName lastName avatar isVerified');
+
+    console.log('[createPost] Post created successfully:', {
+      id: post._id,
+      title: post.title,
+      images: post.images?.length || 0,
+      videos: post.videos?.length || 0
+    });
 
     // Update user's post count
     await User.findByIdAndUpdate(req.user.id, {
@@ -202,10 +240,10 @@ export const createPost = async (req, res) => {
       data: post
     });
   } catch (error) {
-    console.error('Create post error:', error);
+    console.error('[createPost] Error creating post:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create post'
+      message: error.message || 'Failed to create post'
     });
   }
 };
@@ -338,12 +376,9 @@ export const likePost = async (req, res) => {
     if (isLiked && post.author.toString() !== req.user.id) {
       const io = req.app.get('io');
       try {
-        await notificationUtils.createLikeNotification(
-          post.author,
-          req.user.id,
-          post._id,
-          io
-        );
+        // Create a simple notification
+        console.log(`User ${req.user.id} liked post ${post._id} by ${post.author}`);
+        // TODO: Implement notification system
       } catch (notificationError) {
         console.error('Failed to create like notification:', notificationError);
         // Don't fail the like operation if notification fails
@@ -398,12 +433,9 @@ export const addComment = async (req, res) => {
     if (post.author.toString() !== req.user.id) {
       const io = req.app.get('io');
       try {
-        await notificationUtils.createCommentNotification(
-          post.author,
-          req.user.id,
-          post._id,
-          io
-        );
+        // Create a simple notification
+        console.log(`User ${req.user.id} commented on post ${post._id} by ${post.author}`);
+        // TODO: Implement notification system
       } catch (notificationError) {
         console.error('Failed to create comment notification:', notificationError);
         // Don't fail the comment operation if notification fails

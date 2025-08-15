@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Card = ({ 
   children, 
@@ -9,43 +9,36 @@ const Card = ({
   glow = false,
   ...props 
 }) => {
-  const { isDark } = useTheme();
+  const { isDark, getCurrentPalette } = useTheme();
+  const palette = getCurrentPalette();
 
   const getVariantClasses = () => {
     switch (variant) {
       case 'glass':
         return isDark
-          ? 'bg-gray-800/30 backdrop-blur-xl border border-gray-600/30'
-          : 'bg-white/30 backdrop-blur-xl border border-white/30';
+          ? 'glass border-primary bg-opacity-20'
+          : 'glass border-primary bg-opacity-10';
       case 'solid':
-        return isDark
-          ? 'bg-gray-800 border border-gray-700'
-          : 'bg-white border border-gray-200';
+        return 'bg-primary border border-primary shadow-dark';
       case 'gradient':
-        return isDark
-          ? 'bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-600/50'
-          : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200';
+        return `bg-gradient-brand text-white border-none shadow-dark-lg`;
+      case 'glow':
+        return `bg-primary border border-primary glow shadow-dark`;
       default:
-        return isDark
-          ? 'bg-gray-800/50 border border-gray-700/50'
-          : 'bg-white/50 border border-gray-200/50';
+        return 'card shadow-dark hover:shadow-dark-lg';
     }
   };
 
   const getHoverClasses = () => {
     if (!hover) return '';
     
-    return isDark
-      ? 'hover:bg-gray-700/60 hover:border-gray-600/70 hover:shadow-lg hover:shadow-cyan-500/10'
-      : 'hover:bg-white/80 hover:border-gray-300/70 hover:shadow-lg hover:shadow-blue-500/10';
+    return 'hover-lift interactive';
   };
 
   const getGlowClasses = () => {
     if (!glow) return '';
     
-    return isDark
-      ? 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30'
-      : 'shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30';
+    return variant === 'gradient' ? 'animate-glow' : 'hover-glow';
   };
 
   return (
@@ -57,6 +50,9 @@ const Card = ({
         ${getGlowClasses()}
         ${className}
       `}
+      style={variant === 'gradient' ? {
+        background: palette.gradient.replace('from-', 'linear-gradient(135deg, ').replace(' to-', ', ')
+      } : {}}
       {...props}
     >
       {children}

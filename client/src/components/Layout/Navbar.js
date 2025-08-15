@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
-import { useTheme } from '../../context/ThemeContext';
-import ThemeToggle from '../UI/ThemeToggle';
+import { useTheme } from '../../contexts/ThemeContext';
+import ThemeToggle from '../Theme/ThemeToggle';
 import { 
   FaHome, 
   FaTrophy, 
@@ -42,7 +42,6 @@ const Navbar = () => {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: FaHome, protected: true },
-    { name: 'Cricket', path: '/cricket', icon: FaGamepad, protected: false },
     { name: 'Matches', path: '/matches', icon: FaFootballBall, protected: false },
     { name: 'Tournaments', path: '/tournaments', icon: FaTrophy, protected: false },
     { name: 'Posts', path: '/posts', icon: FaNewspaper, protected: false },

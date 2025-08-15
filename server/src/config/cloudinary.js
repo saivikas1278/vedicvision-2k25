@@ -1,58 +1,59 @@
 import { v2 as cloudinary } from 'cloudinary';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
 });
 
-// Upload video to Cloudinary
-export const uploadVideoToCloudinary = async (fileBuffer, options = {}) => {
-  return new Promise((resolve, reject) => {
-    const uploadOptions = {
-      resource_type: 'video',
-      folder: 'sportsphere/videos',
-      use_filename: true,
-      unique_filename: false,
-      ...options
-    };
-
-    cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    ).end(fileBuffer);
+// Test configuration
+const testConfig = () => {
+  console.log('Cloudinary Config:', {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY ? '***' + process.env.CLOUDINARY_API_KEY.slice(-4) : 'missing',
+    api_secret: process.env.CLOUDINARY_API_SECRET ? '***' + process.env.CLOUDINARY_API_SECRET.slice(-4) : 'missing'
   });
 };
 
-// Upload image to Cloudinary
-export const uploadImageToCloudinary = async (fileBuffer, options = {}) => {
-  return new Promise((resolve, reject) => {
-    const uploadOptions = {
-      resource_type: 'image',
-      folder: 'sportsphere/images',
-      use_filename: true,
-      unique_filename: false,
-      ...options
-    };
+testConfig();
 
-    cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    ).end(fileBuffer);
-  });
+// Upload image to Cloudinary
+export const uploadImageToCloudinary = async (filePath, options = {}) => {
+  try {
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: 'sportsphere/posts/images',
+      resource_type: 'image',
+      quality: 'auto:good',
+      fetch_format: 'auto',
+      ...options
+    });
+    return result;
+  } catch (error) {
+    console.error('Cloudinary image upload error:', error);
+    throw error;
+  }
+};
+
+// Upload video to Cloudinary
+export const uploadVideoToCloudinary = async (filePath, options = {}) => {
+  try {
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: 'sportsphere/posts/videos',
+      resource_type: 'video',
+      quality: 'auto:good',
+      ...options
+    });
+    return result;
+  } catch (error) {
+    console.error('Cloudinary video upload error:', error);
+    throw error;
+  }
 };
 
 // Delete file from Cloudinary

@@ -2,6 +2,7 @@ import { validationResult } from 'express-validator';
 import Match from '../models/Match.js';
 import Tournament from '../models/Tournament.js';
 import Team from '../models/Team.js';
+import Scorecard from '../models/Scorecard.js';
 import { emitScoreUpdate, emitMatchEvent } from '../utils/socketHandlers.js';
 
 // @desc    Get all matches
@@ -276,20 +277,15 @@ export const deleteMatch = async (req, res, next) => {
 
 // @desc    Update match score
 // @route   PUT /api/matches/:id/score
-// @access  Private (Organizer only)
+// @access  Private (Organizer/Team members)
 export const updateMatchScore = async (req, res, next) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation failed',
-        details: errors.array()
-      });
-    }
+    const { homeScore, awayScore, events, notes, weather, venue } = req.body;
 
-    const match = await Match.findById(req.params.id).populate('tournament');
+    const match = await Match.findById(req.params.id)
+      .populate('tournament')
+      .populate('homeTeam')
+      .populate('awayTeam');
 
     if (!match) {
       return res.status(404).json({
@@ -298,30 +294,64 @@ export const updateMatchScore = async (req, res, next) => {
       });
     }
 
-    // Make sure user is tournament organizer
-    if (match.tournament.organizer.toString() !== req.user.id) {
+    // Check authorization - tournament organizer or team members
+    const isOrganizer = match.tournament.organizer.toString() === req.user.id;
+    const isTeamMember = match.homeTeam.players.some(p => p.user?.toString() === req.user.id) ||
+                        match.awayTeam.players.some(p => p.user?.toString() === req.user.id);
+
+    if (!isOrganizer && !isTeamMember) {
       return res.status(401).json({
         success: false,
         error: 'Not authorized to update this match'
       });
     }
 
-    const { homeScore, awayScore } = req.body;
+    // Find or create scorecard
+    let scorecard = await Scorecard.findOne({ match: match._id });
+    if (!scorecard) {
+      scorecard = new Scorecard({
+        match: match._id,
+        homeTeam: match.homeTeam._id,
+        awayTeam: match.awayTeam._id,
+        sport: match.sport || match.tournament.sport
+      });
+    }
+
+    // Update scorecard
+    if (homeScore !== undefined) scorecard.homeScore = homeScore;
+    if (awayScore !== undefined) scorecard.awayScore = awayScore;
+    if (events) scorecard.events = events;
+    if (notes) scorecard.notes = notes;
+    if (weather) scorecard.weather = weather;
+    if (venue) scorecard.venue = venue;
     
-    // Update score
-    await match.updateScore(homeScore, awayScore);
+    scorecard.lastUpdated = new Date();
+    await scorecard.save();
+
+    // Update match score for quick access
+    if (homeScore !== undefined || awayScore !== undefined) {
+      match.score = {
+        home: homeScore !== undefined ? homeScore : (match.score?.home || 0),
+        away: awayScore !== undefined ? awayScore : (match.score?.away || 0)
+      };
+      await match.save();
+    }
 
     // Emit score update via socket
     const io = req.app.get('io');
-    emitScoreUpdate(io, match._id, match.tournament._id, homeScore, awayScore, {
-      type: 'score_update',
-      homeScore,
-      awayScore
-    });
+    if (io) {
+      emitScoreUpdate(io, match._id, match.tournament._id, homeScore, awayScore, {
+        type: 'score_update',
+        homeScore: scorecard.homeScore,
+        awayScore: scorecard.awayScore,
+        events: scorecard.events
+      });
+    }
 
     res.status(200).json({
       success: true,
-      data: match
+      data: scorecard,
+      message: 'Score updated successfully'
     });
   } catch (error) {
     next(error);
@@ -381,7 +411,10 @@ export const addMatchEvent = async (req, res, next) => {
 // @access  Private (Organizer only)
 export const startMatch = async (req, res, next) => {
   try {
-    const match = await Match.findById(req.params.id).populate('tournament');
+    const match = await Match.findById(req.params.id)
+      .populate('tournament')
+      .populate('homeTeam')
+      .populate('awayTeam');
 
     if (!match) {
       return res.status(404).json({
@@ -390,8 +423,12 @@ export const startMatch = async (req, res, next) => {
       });
     }
 
-    // Make sure user is tournament organizer
-    if (match.tournament.organizer.toString() !== req.user.id) {
+    // Check authorization - tournament organizer or team members
+    const isOrganizer = match.tournament.organizer.toString() === req.user.id;
+    const isTeamMember = match.homeTeam.players.some(p => p.user?.toString() === req.user.id) ||
+                        match.awayTeam.players.some(p => p.user?.toString() === req.user.id);
+
+    if (!isOrganizer && !isTeamMember) {
       return res.status(401).json({
         success: false,
         error: 'Not authorized to start this match'
@@ -405,19 +442,41 @@ export const startMatch = async (req, res, next) => {
       });
     }
 
-    await match.startMatch();
+    // Start the match
+    match.status = 'ongoing';
+    match.actualStartTime = new Date();
+    await match.save();
+
+    // Create scorecard if it doesn't exist
+    let scorecard = await Scorecard.findOne({ match: match._id });
+    if (!scorecard) {
+      scorecard = new Scorecard({
+        match: match._id,
+        homeTeam: match.homeTeam._id,
+        awayTeam: match.awayTeam._id,
+        sport: match.sport || match.tournament.sport,
+        events: [],
+        statistics: {},
+        homeScore: 0,
+        awayScore: 0
+      });
+      await scorecard.save();
+    }
 
     // Emit match status change via socket
     const io = req.app.get('io');
-    io.to(`match-${match._id}`).emit('match-status-changed', {
-      matchId: match._id,
-      status: 'live',
-      timestamp: new Date()
-    });
+    if (io) {
+      io.to(`match-${match._id}`).emit('match-status-changed', {
+        matchId: match._id,
+        status: 'ongoing',
+        timestamp: new Date()
+      });
+    }
 
     res.status(200).json({
       success: true,
-      data: match
+      data: match,
+      scorecard: scorecard
     });
   } catch (error) {
     next(error);
@@ -539,6 +598,111 @@ export const getUpcomingMatches = async (req, res, next) => {
 // @desc    Get match statistics
 // @route   GET /api/matches/:id/stats
 // @access  Public
+// @desc    Update final match result
+// @route   PUT /api/matches/:id/result
+// @access  Private (Organizer/Team members)
+export const updateMatchResult = async (req, res, next) => {
+  try {
+    const { homeScore, awayScore, winner, events, notes, weather, venue } = req.body;
+
+    const match = await Match.findById(req.params.id)
+      .populate('tournament')
+      .populate('homeTeam')
+      .populate('awayTeam');
+
+    if (!match) {
+      return res.status(404).json({
+        success: false,
+        error: 'Match not found'
+      });
+    }
+
+    // Check authorization
+    const isOrganizer = match.tournament.organizer.toString() === req.user.id;
+    const isTeamMember = match.homeTeam.players.some(p => p.user?.toString() === req.user.id) ||
+                        match.awayTeam.players.some(p => p.user?.toString() === req.user.id);
+
+    if (!isOrganizer && !isTeamMember) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authorized to update this match'
+      });
+    }
+
+    // Update match result
+    match.result = {
+      homeScore: homeScore || 0,
+      awayScore: awayScore || 0,
+      winner: winner || null,
+      isDraw: homeScore === awayScore
+    };
+    match.score = {
+      home: homeScore || 0,
+      away: awayScore || 0
+    };
+    match.status = 'completed';
+    match.actualEndTime = new Date();
+    await match.save();
+
+    // Update scorecard
+    let scorecard = await Scorecard.findOne({ match: match._id });
+    if (scorecard) {
+      scorecard.homeScore = homeScore || 0;
+      scorecard.awayScore = awayScore || 0;
+      scorecard.winner = winner;
+      if (events) scorecard.events = events;
+      if (notes) scorecard.notes = notes;
+      if (weather) scorecard.weather = weather;
+      if (venue) scorecard.venue = venue;
+      scorecard.completed = true;
+      scorecard.lastUpdated = new Date();
+      await scorecard.save();
+    }
+
+    // Update team stats
+    const homeResult = {
+      result: match.result.isDraw ? 'draw' : (match.result.winner?.toString() === match.homeTeam._id.toString() ? 'win' : 'loss'),
+      goalsFor: homeScore || 0,
+      goalsAgainst: awayScore || 0
+    };
+
+    const awayResult = {
+      result: match.result.isDraw ? 'draw' : (match.result.winner?.toString() === match.awayTeam._id.toString() ? 'win' : 'loss'),
+      goalsFor: awayScore || 0,
+      goalsAgainst: homeScore || 0
+    };
+
+    // Update team statistics if they have updateStats method
+    if (typeof match.homeTeam.updateStats === 'function') {
+      await match.homeTeam.updateStats(homeResult);
+    }
+    if (typeof match.awayTeam.updateStats === 'function') {
+      await match.awayTeam.updateStats(awayResult);
+    }
+
+    // Emit match completion via socket
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`match-${match._id}`).emit('match-completed', {
+        matchId: match._id,
+        result: match.result,
+        timestamp: new Date()
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: match,
+      message: 'Match completed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get match statistics
+// @route   GET /api/matches/:id/stats
+// @access  Public
 export const getMatchStats = async (req, res, next) => {
   try {
     const match = await Match.findById(req.params.id)
@@ -553,26 +717,29 @@ export const getMatchStats = async (req, res, next) => {
       });
     }
 
+    const scorecard = await Scorecard.findOne({ match: match._id });
+
     const stats = {
       matchInfo: {
         id: match._id,
         status: match.status,
         score: match.score,
         duration: match.duration,
-        events: match.events.length
+        events: scorecard?.events || []
       },
       teamStats: {
         home: {
           team: match.homeTeam,
-          stats: match.statistics.home
+          stats: match.statistics?.home || {}
         },
         away: {
           team: match.awayTeam,
-          stats: match.statistics.away
+          stats: match.statistics?.away || {}
         }
       },
-      playerStats: match.playerStats,
-      events: match.events
+      playerStats: match.playerStats || [],
+      events: scorecard?.events || [],
+      scorecard: scorecard
     };
 
     res.status(200).json({

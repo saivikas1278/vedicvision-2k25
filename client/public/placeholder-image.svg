@@ -1,0 +1,8 @@
+<!-- This is a placeholder for when images fail to load -->
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder">
+  <title>Image placeholder</title>
+  <rect width="100%" height="100%" fill="#e2e8f0"/>
+  <text x="50%" y="50%" fill="#64748b" text-anchor="middle" dominant-baseline="central" font-family="system-ui" font-size="16">
+    Image not available
+  </text>
+</svg>

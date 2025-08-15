@@ -34,7 +34,13 @@ const matchService = {
 
   // Update match score
   updateScore: async (matchId, scoreData) => {
-    const response = await api.put(`/matches/${matchId}/score`, scoreData);
+    const response = await api.patch(`/matches/${matchId}/score`, scoreData);
+    return response;
+  },
+
+  // Update match result (final result)
+  updateMatchResult: async (matchId, resultData) => {
+    const response = await api.patch(`/matches/${matchId}/result`, resultData);
     return response;
   },
 

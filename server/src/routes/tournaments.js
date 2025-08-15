@@ -14,6 +14,9 @@ import {
   updateTournamentBracket,
   getTournamentStandings,
   getTournamentMatches,
+  getTournamentSchedule,
+  startTournament,
+  updateMatchResult,
   searchTournaments
 } from '../controllers/tournaments.js';
 import { protect, authorize } from '../middleware/auth.js';
@@ -40,15 +43,19 @@ const tournamentValidation = [
     .isInt({ min: 2, max: 64 })
     .withMessage('Maximum teams must be between 2 and 64'),
   body('dates.registrationStart')
+    .optional()
     .isISO8601()
     .withMessage('Invalid registration start date'),
   body('dates.registrationEnd')
+    .optional()
     .isISO8601()
     .withMessage('Invalid registration end date'),
   body('dates.tournamentStart')
+    .optional()
     .isISO8601()
     .withMessage('Invalid tournament start date'),
   body('dates.tournamentEnd')
+    .optional()
     .isISO8601()
     .withMessage('Invalid tournament end date')
 ];
@@ -60,19 +67,24 @@ router.get('/:id', getTournament);
 router.get('/:id/bracket', getTournamentBracket);
 router.get('/:id/standings', getTournamentStandings);
 router.get('/:id/matches', getTournamentMatches);
+router.get('/:id/schedule', getTournamentSchedule);
 
 // Protected routes
-router.post('/', protect, authorize('organizer'), tournamentValidation, createTournament);
-router.put('/:id', protect, authorize('organizer'), updateTournament);
-router.delete('/:id', protect, authorize('organizer'), deleteTournament);
+router.post('/', protect, tournamentValidation, createTournament);
+router.put('/:id', protect, updateTournament);
+router.delete('/:id', protect, deleteTournament);
+
+// Tournament management routes
+router.post('/:id/start', protect, startTournament);
+router.put('/:id/matches/:matchId/result', protect, updateMatchResult);
 
 // Team registration routes
 router.post('/:id/register', protect, registerTeamForTournament);
 router.delete('/:id/unregister', protect, unregisterTeamFromTournament);
 
 // Organizer management routes
-router.put('/:id/registrations/:teamId/approve', protect, authorize('organizer'), approveTournamentRegistration);
-router.put('/:id/registrations/:teamId/reject', protect, authorize('organizer'), rejectTournamentRegistration);
-router.put('/:id/bracket', protect, authorize('organizer'), updateTournamentBracket);
+router.put('/:id/registrations/:teamId/approve', protect, approveTournamentRegistration);
+router.put('/:id/registrations/:teamId/reject', protect, rejectTournamentRegistration);
+router.put('/:id/bracket', protect, updateTournamentBracket);
 
 export default router;

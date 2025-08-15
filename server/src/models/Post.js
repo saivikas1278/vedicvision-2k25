@@ -123,12 +123,10 @@ const postSchema = new mongoose.Schema({
     location: {
       type: {
         type: String,
-        enum: ['Point'],
-        default: 'Point'
+        enum: ['Point']
       },
       coordinates: {
-        type: [Number],
-        index: '2dsphere'
+        type: [Number]
       },
       address: String
     },
@@ -149,7 +147,6 @@ postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ type: 1, createdAt: -1 });
 postSchema.index({ sport: 1, createdAt: -1 });
 postSchema.index({ tags: 1 });
-postSchema.index({ 'metadata.location': '2dsphere' });
 postSchema.index({ title: 'text', content: 'text', tags: 'text' });
 
 // Virtuals

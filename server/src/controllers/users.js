@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import Team from '../models/Team.js';
 import Match from '../models/Match.js';
 import Tournament from '../models/Tournament.js';
+import FitnessContent from '../models/FitnessContent.js';
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -451,6 +452,244 @@ export const searchUsers = async (req, res, next) => {
       success: true,
       count: users.length,
       data: users
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update user team status
+// @route   PUT /api/users/:id/team-status
+// @access  Private
+export const updateUserTeamStatus = async (req, res, next) => {
+  try {
+    const { teamId, status } = req.body;
+
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Team ID is required'
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Check if user can update team status (either their own profile or admin)
+    if (req.user.id !== req.params.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to update this user'
+      });
+    }
+
+    // Update user's current team if status is active
+    if (status === 'active') {
+      user.currentTeam = teamId;
+    } else if (status === 'inactive' && user.currentTeam?.toString() === teamId) {
+      user.currentTeam = null;
+    }
+
+    // Add or update team in user's teams array
+    const existingTeamIndex = user.teams?.findIndex(team => 
+      team.team?.toString() === teamId
+    );
+
+    if (existingTeamIndex >= 0) {
+      user.teams[existingTeamIndex].status = status;
+      user.teams[existingTeamIndex].joinedAt = new Date();
+    } else {
+      if (!user.teams) user.teams = [];
+      user.teams.push({
+        team: teamId,
+        status: status,
+        joinedAt: new Date()
+      });
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get dashboard stats for authenticated user
+// @route   GET /api/users/dashboard/stats
+// @access  Private
+export const getDashboardStats = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user with stats
+    const user = await User.findById(userId).select('stats');
+    
+    // Get teams count
+    const teamsCount = await Team.countDocuments({ 
+      $or: [
+        { 'players.user': userId },
+        { captain: userId }
+      ]
+    });
+
+    // Get tournaments count
+    const tournamentsCount = await Tournament.countDocuments({
+      $or: [
+        { participants: userId },
+        { 'teams.members': userId }
+      ]
+    });
+
+    // Get videos watched count (from fitness service or video posts)
+    const videosWatched = await FitnessContent.countDocuments({
+      'completedBy.user': userId,
+      type: 'video'
+    });
+
+    // Get completed workouts count
+    const completedWorkouts = await FitnessContent.countDocuments({
+      'completedBy.user': userId,
+      type: 'workout'
+    });
+
+    const stats = {
+      tournaments: tournamentsCount,
+      teams: teamsCount,
+      watchedVideos: videosWatched,
+      completedWorkouts: completedWorkouts,
+      userStats: user.stats
+    };
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get recent activities for dashboard
+// @route   GET /api/users/dashboard/activities
+// @access  Private
+export const getRecentActivities = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const activities = [];
+
+    // Get recent matches
+    const recentMatches = await Match.find({
+      $or: [
+        { 'teams.players': userId },
+        { createdBy: userId }
+      ]
+    })
+    .sort({ createdAt: -1 })
+    .limit(3)
+    .select('title status sport createdAt');
+
+    recentMatches.forEach(match => {
+      activities.push({
+        id: match._id,
+        type: 'match',
+        title: `Match: ${match.title}`,
+        description: `${match.sport} match`,
+        status: match.status,
+        date: match.createdAt,
+        icon: 'FaBaseballBall'
+      });
+    });
+
+    // Get recent tournaments
+    const recentTournaments = await Tournament.find({
+      $or: [
+        { participants: userId },
+        { 'teams.members': userId }
+      ]
+    })
+    .sort({ createdAt: -1 })
+    .limit(2)
+    .select('name status sport startDate');
+
+    recentTournaments.forEach(tournament => {
+      activities.push({
+        id: tournament._id,
+        type: 'tournament',
+        title: `Tournament: ${tournament.name}`,
+        description: `${tournament.sport} tournament`,
+        status: tournament.status,
+        date: tournament.startDate,
+        icon: 'FaTrophy'
+      });
+    });
+
+    // Sort activities by date
+    activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.status(200).json({
+      success: true,
+      data: activities.slice(0, 5) // Return top 5 activities
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get notifications for user
+// @route   GET /api/users/notifications
+// @access  Private
+export const getNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const notifications = [];
+
+    // Get upcoming tournaments
+    const upcomingTournaments = await Tournament.find({
+      $or: [
+        { participants: userId },
+        { 'teams.members': userId }
+      ],
+      startDate: { $gte: new Date() },
+      status: 'upcoming'
+    })
+    .sort({ startDate: 1 })
+    .limit(3)
+    .select('name startDate sport');
+
+    upcomingTournaments.forEach(tournament => {
+      const daysUntil = Math.ceil((new Date(tournament.startDate) - new Date()) / (1000 * 60 * 60 * 24));
+      notifications.push({
+        id: tournament._id,
+        type: 'tournament',
+        text: `Tournament "${tournament.name}" starts in ${daysUntil} days`,
+        time: tournament.startDate,
+        priority: daysUntil <= 3 ? 'high' : 'normal'
+      });
+    });
+
+    // Get pending team invitations (if you have a team invitations system)
+    // This is a placeholder - implement based on your team invitation logic
+    
+    // Sort by priority and time
+    notifications.sort((a, b) => {
+      if (a.priority === 'high' && b.priority !== 'high') return -1;
+      if (b.priority === 'high' && a.priority !== 'high') return 1;
+      return new Date(a.time) - new Date(b.time);
+    });
+
+    res.status(200).json({
+      success: true,
+      data: notifications
     });
   } catch (error) {
     next(error);

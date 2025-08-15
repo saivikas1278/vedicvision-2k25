@@ -29,7 +29,9 @@ export const sendTokenResponse = (user, statusCode, res) => {
          email: user.email,
          role: user.role,
          avatar: user.avatar,
-         isVerified: user.isVerified
+         isVerified: user.isVerified,
+         currentTeam: user.currentTeam,
+         teams: user.teams
        }
      });
 };

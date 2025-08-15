@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useTheme } from '../../context/ThemeContext';
 
 const AnimatedCard = ({ 
   children, 
@@ -13,7 +12,9 @@ const AnimatedCard = ({
   const [isHovered, setIsHovered] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef(null);
-  const { isDark } = useTheme();
+
+  // Check if we're in dark mode by looking at the document class
+  const isDark = document.documentElement.classList.contains('dark');
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;

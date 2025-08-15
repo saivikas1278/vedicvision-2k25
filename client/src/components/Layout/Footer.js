@@ -7,27 +7,19 @@ const Footer = () => {
   const footerLinks = {
     Product: [
       { label: 'Tournaments', href: '/tournaments' },
-      { label: 'Videos', href: '/videos' },
       { label: 'Fitness', href: '/fitness' },
       { label: 'Teams', href: '/teams' },
     ],
     Support: [
       { label: 'Help Center', href: '/help' },
       { label: 'Contact Us', href: '/contact' },
-      { label: 'Community', href: '/community' },
-      { label: 'API Docs', href: '/docs' },
     ],
     Company: [
       { label: 'About Us', href: '/about' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Press', href: '/press' },
     ],
     Legal: [
       { label: 'Privacy Policy', href: '/privacy' },
       { label: 'Terms of Service', href: '/terms' },
-      { label: 'Cookie Policy', href: '/cookies' },
-      { label: 'GDPR', href: '/gdpr' },
     ],
   };
 
@@ -163,9 +155,6 @@ const Footer = () => {
             </Link>
             <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
               Terms
-            </Link>
-            <Link to="/cookies" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Cookies
             </Link>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { 
   FaEdit, 
@@ -19,57 +19,124 @@ import {
   FaEyeSlash,
   FaGamepad,
   FaMedal,
-  FaFire
+  FaFire,
+  FaUser
 } from 'react-icons/fa';
+import { loadUser } from '../../redux/slices/authSlice';
+import LoadingSpinner from '../../components/UI/LoadingSpinner';
 import GlareHover from '../../components/UI/GlareHover';
 
 const ProfilePage = () => {
-  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { user, loading: isLoading, isAuthenticated } = useSelector((state) => state.auth);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState({});
   const [showStats, setShowStats] = useState(true);
 
-  // Mock user data - in real app would come from API
+  // Use actual user data instead of mock data
   const [profileData, setProfileData] = useState({
     personalInfo: {
-      fullName: user?.fullName || 'John Doe',
-      email: user?.email || 'john.doe@example.com',
-      phone: '+1 (555) 123-4567',
-      dateOfBirth: '1990-05-15',
-      location: 'New York, NY',
-      bio: 'Passionate sports enthusiast and fitness lover. Always looking for new challenges and opportunities to improve.',
-      profilePicture: user?.profilePicture || null,
-      joinDate: '2024-01-15'
+      fullName: '',
+      email: '',
+      phone: '',
+      dateOfBirth: '',
+      location: '',
+      bio: '',
+      profilePicture: null,
+      joinDate: ''
     },
     stats: {
-      tournamentsJoined: 12,
-      matchesPlayed: 48,
-      winRate: 68,
-      totalScore: 1250,
-      fitnessStreak: 7,
-      workoutsCompleted: 34
+      tournamentsJoined: 0,
+      matchesPlayed: 0,
+      winRate: 0,
+      totalScore: 0,
+      fitnessStreak: 0,
+      workoutsCompleted: 0
     },
-    recentActivity: [
-      { id: 1, type: 'tournament', title: 'Summer Cricket Tournament', date: '2025-08-10', status: 'completed' },
-      { id: 2, type: 'workout', title: 'HIIT Training Session', date: '2025-08-09', status: 'completed' },
-      { id: 3, type: 'match', title: 'Basketball vs Team Alpha', date: '2025-08-08', status: 'won' },
-      { id: 4, type: 'fitness', title: 'Morning Run - 5K', date: '2025-08-07', status: 'completed' }
-    ],
-    achievements: [
-      { id: 1, title: 'Tournament Champion', description: 'Won your first tournament', icon: '🏆', earned: true },
-      { id: 2, title: 'Fitness Enthusiast', description: '30-day workout streak', icon: '💪', earned: true },
-      { id: 3, title: 'Team Player', description: 'Joined 10 teams', icon: '👥', earned: true },
-      { id: 4, title: 'Score Master', description: 'Reached 1000 total points', icon: '⭐', earned: true },
-      { id: 5, title: 'Marathon Runner', description: 'Complete a marathon', icon: '🏃', earned: false },
-      { id: 6, title: 'Social Butterfly', description: 'Connect with 50 athletes', icon: '🦋', earned: false }
-    ]
+    recentActivity: [],
+    achievements: []
   });
+
+  // ALL HOOKS MUST BE CALLED FIRST - before any early returns
+
+  // Fetch user profile data on component mount
+  useEffect(() => {
+    if (!user && isAuthenticated) {
+      console.log('[ProfilePage] Loading user profile...');
+      dispatch(loadUser());
+    }
+  }, [dispatch, user, isAuthenticated]);
+
+  // Update profile data when user data changes
+  useEffect(() => {
+    if (user) {
+      console.log('[ProfilePage] Updating profile data with user:', user);
+      setProfileData(prev => ({
+        ...prev,
+        personalInfo: {
+          fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+          email: user.email || '',
+          phone: user.phoneNumber || '',
+          dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
+          location: user.location ? `${user.location.city || ''}, ${user.location.state || ''}`.replace(/^,\s*|,\s*$/g, '') : '',
+          bio: user.bio || 'No bio available',
+          profilePicture: user.avatar || null,
+          joinDate: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : ''
+        },
+        stats: {
+          tournamentsJoined: user.stats?.tournamentsParticipated || 0,
+          matchesPlayed: user.stats?.matchesPlayed || 0,
+          winRate: user.stats?.matchesPlayed > 0 ? Math.round((user.stats?.matchesWon || 0) / user.stats.matchesPlayed * 100) : 0,
+          totalScore: user.stats?.totalScore || 0,
+          fitnessStreak: user.stats?.fitnessStreak || 0,
+          workoutsCompleted: user.stats?.workoutsCompleted || 0
+        },
+        recentActivity: [
+          // Since we don't have real activity data yet, show a placeholder
+          { id: 1, type: 'profile', title: 'Profile updated', date: new Date().toISOString().split('T')[0], status: 'completed' }
+        ],
+        achievements: [
+          { id: 1, title: 'New Member', description: 'Welcome to SportSphere!', icon: '🎉', earned: true },
+          { id: 2, title: 'Profile Complete', description: 'Complete your profile information', icon: '👤', earned: !!user.bio },
+          { id: 3, title: 'Team Player', description: 'Join your first team', icon: '👥', earned: false },
+          { id: 4, title: 'Tournament Participant', description: 'Join your first tournament', icon: '🏆', earned: false },
+          { id: 5, title: 'Fitness Enthusiast', description: 'Complete 10 workouts', icon: '💪', earned: false },
+          { id: 6, title: 'Social Butterfly', description: 'Connect with 10 athletes', icon: '🦋', earned: false }
+        ]
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isEditing) {
       setEditedProfile(profileData.personalInfo);
     }
   }, [isEditing, profileData.personalInfo]);
+
+  // NOW we can have early returns AFTER all hooks are called
+
+  // Show loading spinner while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Show message if user is not authenticated
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in to view your profile</h2>
+          <Link to="/login" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -99,6 +166,7 @@ const ProfilePage = () => {
       case 'workout': return <FaDumbbell className="text-blue-500" />;
       case 'match': return <FaGamepad className="text-green-500" />;
       case 'fitness': return <FaFire className="text-red-500" />;
+      case 'profile': return <FaUser className="text-purple-500" />;
       default: return <FaCalendarAlt className="text-gray-500" />;
     }
   };
@@ -141,11 +209,11 @@ const ProfilePage = () => {
                   <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-gray-600">
                     <div className="flex items-center">
                       <FaMapMarkerAlt className="mr-2" />
-                      {profileData.personalInfo.location}
+                      {profileData.personalInfo.location || 'Location not specified'}
                     </div>
                     <div className="flex items-center">
                       <FaCalendarAlt className="mr-2" />
-                      Joined {new Date(profileData.personalInfo.joinDate).toLocaleDateString()}
+                      Joined {profileData.personalInfo.joinDate ? new Date(profileData.personalInfo.joinDate).toLocaleDateString() : 'Recently'}
                     </div>
                   </div>
                 </>
@@ -293,11 +361,11 @@ const ProfilePage = () => {
                   </div>
                   <div className="flex items-center">
                     <FaPhone className="text-gray-400 mr-3" />
-                    <span className="text-gray-700">{profileData.personalInfo.phone}</span>
+                    <span className="text-gray-700">{profileData.personalInfo.phone || 'Not specified'}</span>
                   </div>
                   <div className="flex items-center">
                     <FaBirthdayCake className="text-gray-400 mr-3" />
-                    <span className="text-gray-700">{new Date(profileData.personalInfo.dateOfBirth).toLocaleDateString()}</span>
+                    <span className="text-gray-700">{profileData.personalInfo.dateOfBirth ? new Date(profileData.personalInfo.dateOfBirth).toLocaleDateString() : 'Not specified'}</span>
                   </div>
                 </div>
               ) : (

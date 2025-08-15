@@ -13,69 +13,87 @@ const UpcomingTournaments = () => {
   const [upcomingTournaments, setUpcomingTournaments] = useState([]);
 
   useEffect(() => {
-    // If redux has tournaments, use them
-    if (tournaments && tournaments.length > 0) {
-      // Filter for upcoming and active tournaments
-      const upcoming = tournaments.filter(t => 
-        t.status === 'active' || t.registrationOpen === true
-      ).slice(0, 3); // Just take the first 3 for the component
-      
-      setUpcomingTournaments(upcoming);
-      setIsLoading(false);
-    } else {
-      // Otherwise fetch from API/use mock data
-      dispatch(fetchTournaments());
-      
-      // Mock data for initial render
-      const fetchUpcomingTournaments = async () => {
+    // Fetch tournaments from API first
+    const fetchUpcomingTournaments = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Try to fetch from the tournaments service
         try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 800));
+          const response = await dispatch(fetchTournaments()).unwrap();
+          console.log('[UpcomingTournaments] Tournament response:', response);
           
-          // Mock data - in a real app, this would come from an API
-          setUpcomingTournaments([
-            {
-              id: 1,
-              name: 'Summer Basketball Championship',
-              startDate: '2025-08-20T10:00:00',
-              location: 'Central City Sports Complex',
-              teamCount: 16,
-              sport: 'Basketball',
-              registrationOpen: true,
-              status: 'active'
-            },
-            {
-              id: 2,
-              name: 'Regional Soccer Tournament',
-              startDate: '2025-09-05T09:00:00',
-              location: 'Memorial Stadium',
-              teamCount: 24,
-              sport: 'Soccer',
-              registrationOpen: true,
-              status: 'active'
-            },
-            {
-              id: 3,
-              name: 'Winter Basketball League',
-              startDate: '2025-10-15T11:00:00',
-              location: 'Downtown Indoor Arena',
-              teamCount: 12,
-              sport: 'Basketball',
-              registrationOpen: false,
-              status: 'coming_soon'
+          if (response && response.tournaments) {
+            // Filter for upcoming and active tournaments
+            const upcoming = response.tournaments.filter(t => 
+              t.status === 'open' || t.status === 'active' || t.registrationOpen === true
+            ).slice(0, 3); // Just take the first 3 for the component
+            
+            setUpcomingTournaments(upcoming);
+          } else {
+            // Use Redux state if API response doesn't have expected structure
+            if (tournaments && tournaments.length > 0) {
+              const upcoming = tournaments.filter(t => 
+                t.status === 'active' || t.registrationOpen === true
+              ).slice(0, 3);
+              setUpcomingTournaments(upcoming);
+            } else {
+              // Mock data fallback
+              setUpcomingTournaments([
+                {
+                  id: 1,
+                  name: 'Summer Basketball Championship',
+                  startDate: '2025-08-20T10:00:00',
+                  location: 'Central City Sports Complex',
+                  teamCount: 16,
+                  sport: 'Basketball',
+                  registrationOpen: true,
+                  status: 'active'
+                },
+                {
+                  id: 2,
+                  name: 'Regional Soccer Tournament',
+                  startDate: '2025-09-05T09:00:00',
+                  location: 'Memorial Stadium',
+                  teamCount: 24,
+                  sport: 'Soccer',
+                  registrationOpen: true,
+                  status: 'active'
+                },
+                {
+                  id: 3,
+                  name: 'Winter Basketball League',
+                  startDate: '2025-10-15T11:00:00',
+                  location: 'Downtown Indoor Arena',
+                  teamCount: 12,
+                  sport: 'Basketball',
+                  registrationOpen: false,
+                  status: 'coming_soon'
+                }
+              ]);
             }
-          ]);
+          }
+        } catch (apiError) {
+          console.error('[UpcomingTournaments] API Error:', apiError);
           
-          setIsLoading(false);
-        } catch (error) {
-          console.error('Error fetching upcoming tournaments:', error);
-          showToast('Failed to load upcoming tournaments', 'error');
-          setIsLoading(false);
+          // Use Redux state as fallback
+          if (tournaments && tournaments.length > 0) {
+            const upcoming = tournaments.filter(t => 
+              t.status === 'active' || t.registrationOpen === true
+            ).slice(0, 3);
+            setUpcomingTournaments(upcoming);
+          }
         }
-      };
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching upcoming tournaments:', error);
+        showToast('Failed to load upcoming tournaments', 'error');
+        setIsLoading(false);
+      }
+    };
 
-      fetchUpcomingTournaments();
-    }
+    fetchUpcomingTournaments();
   }, [dispatch, tournaments]);
 
   // Handle tournament registration

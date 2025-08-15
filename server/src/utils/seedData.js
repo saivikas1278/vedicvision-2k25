@@ -191,14 +191,7 @@ export const seedData = async () => {
     console.log('📝 Old data cleared');
 
     // Create users
-    const hashedUsers = await Promise.all(
-      sampleData.users.map(async (user) => {
-        const salt = await bcrypt.genSalt(12);
-        const hashedPassword = await bcrypt.hash(user.password, salt);
-        return { ...user, password: hashedPassword };
-      })
-    );
-    const createdUsers = await User.create(hashedUsers);
+    const createdUsers = await User.create(sampleData.users);
     console.log('👤 Users seeded');
 
     // Create tournament first

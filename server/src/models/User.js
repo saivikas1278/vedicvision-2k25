@@ -86,6 +86,17 @@ const userSchema = new mongoose.Schema({
     tournamentsParticipated: { type: Number, default: 0 },
     tournamentsWon: { type: Number, default: 0 }
   },
+  currentTeam: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    default: null
+  },
+  teams: [{
+    team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+    status: { type: String, enum: ['active', 'inactive', 'left'], default: 'active' },
+    joinedAt: { type: Date, default: Date.now },
+    leftAt: { type: Date }
+  }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   lastActive: {
@@ -111,8 +122,30 @@ userSchema.pre('save', async function(next) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  if (!this.password) return false;
-  return await bcrypt.compare(candidatePassword, this.password);
+  console.log('[USER MODEL] comparePassword called');
+  console.log('[USER MODEL] Has stored password:', !!this.password);
+  console.log('[USER MODEL] Candidate password provided:', !!candidatePassword);
+  console.log('[USER MODEL] Stored password length:', this.password ? this.password.length : 0);
+  console.log('[USER MODEL] Candidate password length:', candidatePassword ? candidatePassword.length : 0);
+  
+  if (!this.password) {
+    console.log('[USER MODEL] No stored password, returning false');
+    return false;
+  }
+  
+  if (!candidatePassword) {
+    console.log('[USER MODEL] No candidate password provided, returning false');
+    return false;
+  }
+  
+  try {
+    const result = await bcrypt.compare(candidatePassword, this.password);
+    console.log('[USER MODEL] bcrypt.compare result:', result);
+    return result;
+  } catch (error) {
+    console.error('[USER MODEL] Error comparing passwords:', error);
+    return false;
+  }
 };
 
 // Get full name virtual

@@ -7,6 +7,7 @@ import {
   updateMatch,
   deleteMatch,
   updateMatchScore,
+  updateMatchResult,
   addMatchEvent,
   startMatch,
   endMatch,
@@ -33,9 +34,8 @@ const scoreUpdateValidation = [
 ];
 
 const eventValidation = [
-  body('type').isIn(['goal', 'card', 'substitution', 'timeout', 'injury', 'other']).withMessage('Invalid event type'),
-  body('team').isIn(['home', 'away']).withMessage('Team must be home or away'),
-  body('minute').isInt({ min: 0, max: 200 }).withMessage('Minute must be between 0 and 200'),
+  body('type').isIn(['goal', 'point', 'card', 'substitution', 'timeout', 'injury', 'foul', 'other']).withMessage('Invalid event type'),
+  body('team').isMongoId().withMessage('Invalid team ID'),
   body('description').notEmpty().withMessage('Event description is required')
 ];
 
@@ -51,10 +51,11 @@ router.post('/', protect, authorize('organizer'), matchValidation, createMatch);
 router.put('/:id', protect, authorize('organizer'), updateMatch);
 router.delete('/:id', protect, authorize('organizer'), deleteMatch);
 
-// Match management routes
-router.put('/:id/score', protect, authorize('organizer'), scoreUpdateValidation, updateMatchScore);
-router.post('/:id/events', protect, authorize('organizer'), eventValidation, addMatchEvent);
-router.put('/:id/start', protect, authorize('organizer'), startMatch);
+// Match management routes (accessible to organizers and team members)
+router.patch('/:id/score', protect, updateMatchScore);
+router.patch('/:id/result', protect, updateMatchResult);
+router.post('/:id/events', protect, eventValidation, addMatchEvent);
+router.patch('/:id/start', protect, startMatch);
 router.put('/:id/end', protect, authorize('organizer'), endMatch);
 
 export default router;

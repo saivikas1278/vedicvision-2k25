@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -21,7 +21,8 @@ api.interceptors.request.use(
     console.log('[API] Request:', { 
       url: config.url, 
       method: config.method, 
-      hasToken: !!token
+      hasToken: !!token,
+      baseURL: config.baseURL
     });
     return config;
   },
@@ -39,21 +40,43 @@ api.interceptors.response.use(
       status: response.status,
       data: response.data 
     });
+    // Return the full response.data for consistency with backend format
     return response.data;
   },
   (error) => {
+    console.error('[API] Response error details:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      code: error.code,
+      isNetworkError: error.code === 'NETWORK_ERROR' || error.message === 'Network Error'
+    });
+
+    // Handle specific error cases
+    if (!error.response) {
+      // Network error
+      console.error('[API] Network error - server may be down');
+      return Promise.reject({
+        response: {
+          data: {
+            error: 'Unable to connect to server. Please check if the server is running.'
+          }
+        }
+      });
+    }
+
     // Handle token expiration
     if (error.response?.status === 401) {
       console.error('[API] Authentication error:', error.response.data);
       localStorage.removeItem('token');
-      window.location.href = '/login';
-    } else {
-      console.error('[API] Response error:', { 
-        url: error.config?.url,
-        status: error.response?.status,
-        data: error.response?.data
-      });
+      // Don't auto-redirect during login attempts
+      if (!error.config?.url?.includes('/auth/login')) {
+        window.location.href = '/login';
+      }
     }
+
     return Promise.reject(error);
   }
 );

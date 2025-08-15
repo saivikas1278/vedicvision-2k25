@@ -15,9 +15,12 @@ import {
   FaUserTie,
   FaHandshake,
   FaPaperPlane,
-  FaCheckCircle
+  FaCheckCircle,
+  FaSpinner
 } from 'react-icons/fa';
 import GlareHover from '../components/UI/GlareHover';
+import contactService from '../services/contactService';
+import { showToast } from '../utils/toast';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -29,14 +32,16 @@ const ContactPage = () => {
     priority: 'medium'
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   const contactMethods = [
     {
       icon: <FaEnvelope className="text-3xl" />,
       title: 'Email Support',
       description: 'Get help via email within 24 hours',
-      contact: 'support@sportsphere.com',
-      action: 'mailto:support@sportsphere.com',
+      contact: 'leelamadhav.nulakani@gmail.com',
+      action: 'mailto:leelamadhav.nulakani@gmail.com',
       color: 'from-blue-500 to-blue-600'
     },
     {
@@ -122,20 +127,76 @@ const ContactPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitted(true);
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        category: 'general',
-        message: '',
-        priority: 'medium'
-      });
-    }, 1000);
+    setIsLoading(true);
+    setSubmitError(null);
+
+    // Basic client-side validation
+    if (!formData.name || formData.name.trim().length < 2) {
+      setSubmitError('Name must be at least 2 characters long');
+      setIsLoading(false);
+      showToast('Name must be at least 2 characters long', 'error');
+      return;
+    }
+
+    if (!formData.email || !formData.email.includes('@')) {
+      setSubmitError('Please provide a valid email address');
+      setIsLoading(false);
+      showToast('Please provide a valid email address', 'error');
+      return;
+    }
+
+    if (!formData.subject || formData.subject.trim().length < 5) {
+      setSubmitError('Subject must be at least 5 characters long');
+      setIsLoading(false);
+      showToast('Subject must be at least 5 characters long', 'error');
+      return;
+    }
+
+    if (!formData.message || formData.message.trim().length < 10) {
+      setSubmitError('Message must be at least 10 characters long');
+      setIsLoading(false);
+      showToast('Message must be at least 10 characters long', 'error');
+      return;
+    }
+
+    try {
+      console.log('Submitting contact form with data:', formData);
+      const response = await contactService.sendContactForm(formData);
+      console.log('Contact form response:', response);
+      
+      if (response && response.success) {
+        setIsSubmitted(true);
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          category: 'general',
+          message: '',
+          priority: 'medium'
+        });
+        showToast('Message sent successfully! We will get back to you soon.', 'success');
+      } else {
+        console.error('Response indicates failure:', response);
+        throw new Error(response?.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      
+      // Handle validation errors specifically
+      if (error.errors && Array.isArray(error.errors)) {
+        const validationErrors = error.errors.map(err => err.msg).join(', ');
+        setSubmitError(validationErrors);
+        showToast(`Validation error: ${validationErrors}`, 'error');
+      } else {
+        const errorMessage = error.message || 'Failed to send message. Please try again.';
+        setSubmitError(errorMessage);
+        showToast(errorMessage, 'error');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -217,7 +278,10 @@ const ContactPage = () => {
                 <div className="text-center py-8">
                   <FaCheckCircle className="text-green-500 text-6xl mx-auto mb-4" />
                   <h3 className="text-2xl font-semibold text-gray-900 mb-2">Message Sent!</h3>
-                  <p className="text-gray-600">Thank you for contacting us. We'll get back to you within 24 hours.</p>
+                  <p className="text-gray-600 mb-4">Thank you for contacting us. We'll get back to you within 24 hours.</p>
+                  <p className="text-sm text-gray-500 mb-6">
+                    You should receive a confirmation email at your provided email address shortly.
+                  </p>
                   <button 
                     onClick={() => setIsSubmitted(false)}
                     className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -227,18 +291,26 @@ const ContactPage = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {submitError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-red-700 text-sm">{submitError}</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Name * (2-100 characters)</label>
                       <input
                         type="text"
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
                         required
+                        minLength={2}
+                        maxLength={100}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="Your full name"
+                        placeholder="Your full name (at least 2 characters)"
                       />
+                      <p className="text-xs text-gray-500 mt-1">{formData.name.length}/100 characters</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
@@ -255,16 +327,19 @@ const ContactPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Subject * (5-200 characters)</label>
                     <input
                       type="text"
                       name="subject"
                       value={formData.subject}
                       onChange={handleInputChange}
                       required
+                      minLength={5}
+                      maxLength={200}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                      placeholder="Brief description of your inquiry"
+                      placeholder="Brief description of your inquiry (at least 5 characters)"
                     />
+                    <p className="text-xs text-gray-500 mt-1">{formData.subject.length}/200 characters</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -300,24 +375,37 @@ const ContactPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Message * (10-2000 characters)</label>
                     <textarea
                       name="message"
                       value={formData.message}
                       onChange={handleInputChange}
                       required
+                      minLength={10}
+                      maxLength={2000}
                       rows={6}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
-                      placeholder="Please provide as much detail as possible..."
+                      placeholder="Please provide as much detail as possible (at least 10 characters)..."
                     ></textarea>
+                    <p className="text-xs text-gray-500 mt-1">{formData.message.length}/2000 characters</p>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FaPaperPlane />
-                    <span>Send Message</span>
+                    {isLoading ? (
+                      <>
+                        <FaSpinner className="animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaPaperPlane />
+                        <span>Send Message</span>
+                      </>
+                    )}
                   </button>
                 </form>
               )}

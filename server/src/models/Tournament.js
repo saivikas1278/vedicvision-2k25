@@ -158,15 +158,27 @@ const tournamentSchema = new mongoose.Schema({
 
 // Validate dates
 tournamentSchema.pre('save', function(next) {
+  console.log('[TOURNAMENT MODEL] Validating dates:', {
+    registrationStart: this.dates.registrationStart,
+    registrationEnd: this.dates.registrationEnd,
+    tournamentStart: this.dates.tournamentStart,
+    tournamentEnd: this.dates.tournamentEnd
+  });
+  
   if (this.dates.registrationStart >= this.dates.registrationEnd) {
     return next(new Error('Registration start date must be before end date'));
   }
-  if (this.dates.registrationEnd >= this.dates.tournamentStart) {
-    return next(new Error('Registration must end before tournament starts'));
+  
+  // Allow registration to end on or before tournament starts (more flexible)
+  if (this.dates.registrationEnd > this.dates.tournamentStart) {
+    return next(new Error('Registration must end on or before tournament starts'));
   }
+  
   if (this.dates.tournamentStart >= this.dates.tournamentEnd) {
     return next(new Error('Tournament start date must be before end date'));
   }
+  
+  console.log('[TOURNAMENT MODEL] Date validation passed');
   next();
 });
 

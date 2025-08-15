@@ -16,8 +16,15 @@ const authService = {
 
   // Login user
   login: async (credentials) => {
-    const response = await api.post('/auth/login', credentials);
-    return response;
+    console.log('[authService] Login payload:', credentials);
+    try {
+      const response = await api.post('/auth/login', credentials);
+      console.log('[authService] Login response:', response);
+      return response;
+    } catch (err) {
+      console.error('[authService] Login error:', err?.response || err);
+      throw err;
+    }
   },
 
   // Get user profile

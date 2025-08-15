@@ -9,9 +9,33 @@ export const fetchTournaments = createAsyncThunk(
       // Try to get data from the service
       try {
         const response = await tournamentService.getTournaments(params);
-        return response;
+        console.log('[TournamentSlice] API Response:', response);
+        
+        // Handle backend response structure: { success: true, data: [...], count, total, pagination }
+        if (response.success && response.data) {
+          return {
+            tournaments: response.data,
+            pagination: response.pagination || {
+              page: 1,
+              pages: 1,
+              total: response.total || response.count || response.data.length,
+              limit: 10
+            }
+          };
+        }
+        
+        // Fallback for different response formats
+        return {
+          tournaments: response.tournaments || response.data || response || [],
+          pagination: response.pagination || {
+            page: 1,
+            pages: 1,
+            total: (response.tournaments || response.data || response || []).length,
+            limit: 10
+          }
+        };
       } catch (serviceError) {
-        console.log('Using mock data for tournaments');
+        console.log('Service error, using mock data for tournaments:', serviceError);
         // If service fails, return mock data
         const mockTournaments = [
           {
@@ -77,9 +101,21 @@ export const fetchTournamentById = createAsyncThunk(
     try {
       try {
         const response = await tournamentService.getTournament(id);
-        return response;
+        console.log('[TournamentSlice] Tournament Details Response:', response);
+        
+        // Handle backend response structure: { success: true, data: tournament }
+        if (response.success && response.data) {
+          return {
+            tournament: response.data
+          };
+        }
+        
+        // Fallback for different response formats
+        return {
+          tournament: response.tournament || response.data || response
+        };
       } catch (serviceError) {
-        console.log('Using mock data for tournament details');
+        console.log('Service error, using mock data for tournament details:', serviceError);
         // If service fails, return mock data for the tournament
         const mockTournament = {
           _id: id,
@@ -125,23 +161,40 @@ export const createTournament = createAsyncThunk(
   'tournaments/createTournament',
   async (tournamentData, { rejectWithValue }) => {
     try {
-      try {
-        const response = await tournamentService.createTournament(tournamentData);
-        return response;
-      } catch (serviceError) {
-        console.log('Using mock data for tournament creation');
-        // For mock implementation, just return the data that was passed in
-        // In a real app, the server would process this and return the saved tournament
+      console.log('[TournamentSlice] Creating tournament with data:', tournamentData);
+      const response = await tournamentService.createTournament(tournamentData);
+      console.log('[TournamentSlice] Tournament creation response:', response);
+      
+      // Handle backend response structure: { success: true, data: tournament }
+      if (response.success && response.data) {
         return {
-          tournament: {
-            ...tournamentData,
-            _id: tournamentData._id || Date.now().toString(),
-            createdAt: new Date().toISOString()
-          }
+          tournament: response.data
         };
       }
+      
+      // Fallback for different response formats
+      return {
+        tournament: response.tournament || response.data || response
+      };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create tournament');
+      console.error('[TournamentSlice] Tournament creation error:', error);
+      
+      // Don't fall back to mock data - throw the actual error
+      if (error.response?.data?.error) {
+        return rejectWithValue(error.response.data.error);
+      } else if (error.response?.data?.message) {
+        return rejectWithValue(error.response.data.message);
+      } else if (error.response?.data?.details) {
+        // Handle validation errors - show specific field errors
+        const validationErrors = error.response.data.details.map(detail => 
+          `${detail.path || detail.param || 'Field'}: ${detail.msg}`
+        ).join('; ');
+        return rejectWithValue(`Validation failed: ${validationErrors}`);
+      } else if (error.message) {
+        return rejectWithValue(error.message);
+      } else {
+        return rejectWithValue('Failed to create tournament. Please check your internet connection and try again.');
+      }
     }
   }
 );
@@ -172,12 +225,12 @@ export const deleteTournament = createAsyncThunk(
 
 export const registerForTournament = createAsyncThunk(
   'tournaments/registerForTournament',
-  async ({ tournamentId, teamId }, { rejectWithValue }) => {
+  async ({ tournamentId, teamData }, { rejectWithValue }) => {
     try {
-      const response = await tournamentService.registerTeam(tournamentId, teamId);
+      const response = await tournamentService.registerTeam(tournamentId, teamData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to register for tournament');
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || 'Failed to register for tournament');
     }
   }
 );
@@ -254,8 +307,19 @@ const tournamentSlice = createSlice({
       })
       .addCase(fetchTournaments.fulfilled, (state, action) => {
         state.loading = false;
-        state.tournaments = action.payload.tournaments;
-        state.pagination = action.payload.pagination;
+        console.log('[TournamentSlice] Fulfilled action payload:', action.payload);
+        
+        // Handle the response structure properly
+        if (action.payload && action.payload.tournaments) {
+          state.tournaments = action.payload.tournaments;
+          state.pagination = action.payload.pagination || {};
+        } else if (action.payload && Array.isArray(action.payload)) {
+          // Direct array response
+          state.tournaments = action.payload;
+        } else {
+          // Fallback
+          state.tournaments = [];
+        }
       })
       .addCase(fetchTournaments.rejected, (state, action) => {
         state.loading = false;
@@ -268,7 +332,21 @@ const tournamentSlice = createSlice({
       })
       .addCase(fetchTournamentById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentTournament = action.payload.tournament;
+        console.log('[TournamentSlice] Tournament details fulfilled action payload:', action.payload);
+        
+        // Handle the response structure properly
+        if (action.payload && action.payload.tournament) {
+          state.currentTournament = action.payload.tournament;
+        } else if (action.payload && action.payload.data) {
+          // Handle backend response: { success: true, data: tournament }
+          state.currentTournament = action.payload.data;
+        } else if (action.payload && !action.payload.success) {
+          // Direct tournament object
+          state.currentTournament = action.payload;
+        } else {
+          // Fallback
+          state.currentTournament = null;
+        }
       })
       .addCase(fetchTournamentById.rejected, (state, action) => {
         state.loading = false;
@@ -329,12 +407,14 @@ const tournamentSlice = createSlice({
       })
       .addCase(registerForTournament.fulfilled, (state, action) => {
         state.loading = false;
-        const tournament = state.tournaments.find(t => t._id === action.payload.tournament._id);
-        if (tournament) {
-          tournament.participants = action.payload.tournament.participants;
-        }
-        if (state.currentTournament && state.currentTournament._id === action.payload.tournament._id) {
-          state.currentTournament.participants = action.payload.tournament.participants;
+        // Backend returns { success: true, data: team }, not tournament
+        // So we need to update the current tournament's registered teams
+        if (state.currentTournament && action.payload.data) {
+          // Add the new team to registered teams if not already present
+          const teamId = action.payload.data._id;
+          if (!state.currentTournament.registeredTeams.includes(teamId)) {
+            state.currentTournament.registeredTeams.push(teamId);
+          }
         }
       })
       .addCase(registerForTournament.rejected, (state, action) => {

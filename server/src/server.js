@@ -17,6 +17,7 @@ import fitnessRoutes from './routes/fitness.js';
 import postRoutes from './routes/posts.js';
 import profileRoutes from './routes/profiles.js';
 import notificationRoutes from './routes/notifications.js';
+import contactRoutes from './routes/contact.js';
 import testRoutes from './routes/test.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { setupSocketHandlers } from './utils/socketHandlers.js';
@@ -81,6 +82,7 @@ app.use('/api/fitness', fitnessRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/contact', contactRoutes);
 app.use('/api/test', testRoutes);
 
 // Health check endpoint

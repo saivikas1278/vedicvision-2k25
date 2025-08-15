@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   FaHeart, 
   FaRegHeart, 
@@ -19,127 +19,45 @@ import {
 import { toast } from 'react-toastify';
 import { formatDate, getRelativeTime } from '../../utils/helpers';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
+import MetaTags from '../../components/SEO/MetaTags';
+import { 
+  fetchPostById, 
+  likePost, 
+  addComment,
+  selectCurrentPost,
+  selectPostsLoading,
+  selectPostsError,
+  clearCurrentPost
+} from '../../redux/slices/postSlice';
 
 const PostDetails = () => {
   const { id } = useParams();
+  const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector(state => state.auth);
+  const post = useSelector(selectCurrentPost);
+  const loading = useSelector(selectPostsLoading);
+  const error = useSelector(selectPostsError);
   const navigate = useNavigate();
   
-  const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [likes, setLikes] = useState(0);
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState([]);
-  const [relatedPosts, setRelatedPosts] = useState([]);
 
   useEffect(() => {
-    // Simulate fetching post from API
-    const fetchPost = async () => {
-      try {
-        setLoading(true);
-        
-        // In a real app, this would be an API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data - would normally come from an API
-        const mockPost = {
-          id: '1',
-          type: 'photo', // or 'video'
-          user: {
-            id: 'user1',
-            name: 'Michael Jordan',
-            avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-          },
-          imageUrl: 'https://picsum.photos/id/237/1200/800',
-          // videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
-          // thumbnailUrl: 'https://picsum.photos/id/1/1200/800',
-          caption: 'Championship trophy! Hard work pays off. #basketball #champion #nba',
-          location: 'Chicago Stadium',
-          tags: ['basketball', 'champion', 'nba'],
-          likes: 352,
-          comments: [
-            {
-              id: 'c1',
-              user: {
-                id: 'user2',
-                name: 'LeBron James',
-                avatar: 'https://randomuser.me/api/portraits/men/22.jpg'
-              },
-              text: 'Congrats man! Well deserved.',
-              timestamp: '2025-08-10T14:22:00Z'
-            },
-            {
-              id: 'c2',
-              user: {
-                id: 'user3',
-                name: 'Stephen Curry',
-                avatar: 'https://randomuser.me/api/portraits/men/45.jpg'
-              },
-              text: 'Legend! 🏆',
-              timestamp: '2025-08-10T15:30:00Z'
-            }
-          ],
-          timestamp: '2025-08-10T12:15:00Z',
-          sport: 'Basketball'
-        };
-        
-        // Mock related posts
-        const mockRelatedPosts = [
-          {
-            id: '2',
-            type: 'photo',
-            imageUrl: 'https://picsum.photos/id/1012/300/300',
-            user: {
-              name: 'Serena Williams'
-            },
-            likes: 214
-          },
-          {
-            id: '3',
-            type: 'video',
-            thumbnailUrl: 'https://picsum.photos/id/1011/300/300',
-            user: {
-              name: 'Cristiano Ronaldo'
-            },
-            likes: 531
-          },
-          {
-            id: '4',
-            type: 'photo',
-            imageUrl: 'https://picsum.photos/id/1035/300/300',
-            user: {
-              name: 'Simone Biles'
-            },
-            likes: 287
-          }
-        ];
-        
-        setPost(mockPost);
-        setLikes(mockPost.likes);
-        setComments(mockPost.comments);
-        setRelatedPosts(mockRelatedPosts);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching post:', error);
-        toast.error('Failed to load post details');
-        setLoading(false);
-      }
+    // Fetch post from backend
+    dispatch(fetchPostById(id));
+    
+    // Cleanup when component unmounts
+    return () => {
+      dispatch(clearCurrentPost());
     };
-
-    fetchPost();
-  }, [id]);
+  }, [dispatch, id]);
 
   const isVideo = post?.type === 'video';
+  const isLiked = post?.isLikedByUser || false;
 
   const handleLike = () => {
-    if (liked) {
-      setLikes(likes - 1);
-    } else {
-      setLikes(likes + 1);
-    }
-    setLiked(!liked);
+    if (!post) return;
+    dispatch(likePost(post._id));
   };
 
   const handleSave = () => {
@@ -147,36 +65,64 @@ const PostDetails = () => {
     toast.success(saved ? 'Removed from saved posts' : 'Added to saved posts');
   };
 
-  const handleShare = () => {
-    // In a real app, this would open a share dialog
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Link copied to clipboard');
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: post.title || `Post by ${post.author.firstName} ${post.author.lastName}`,
+      text: post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content,
+      url: shareUrl
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        toast.success('Post shared successfully');
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard');
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+        toast.error('Failed to share post');
+      }
+    }
   };
 
   const handleComment = (e) => {
     e.preventDefault();
-    if (!comment.trim()) return;
+    if (!comment.trim() || !post) return;
     
-    const newComment = {
-      id: Date.now(),
-      user: {
-        id: 'current-user',
-        name: 'You',
-        avatar: user?.avatar || '/assets/avatars/default.jpg'
-      },
-      text: comment,
-      timestamp: new Date().toISOString()
-    };
-    
-    setComments([newComment, ...comments]);
+    dispatch(addComment({ id: post._id, content: comment }));
     setComment('');
-    toast.success('Comment added');
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center py-12">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center py-12 px-4">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Error Loading Post</h2>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <button
+          onClick={() => dispatch(fetchPostById(id))}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 mr-4"
+        >
+          Try Again
+        </button>
+        <button
+          onClick={() => navigate('/posts')}
+          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+        >
+          Back to Posts
+        </button>
       </div>
     );
   }
@@ -198,6 +144,20 @@ const PostDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {/* SEO Meta Tags */}
+      {post && (
+        <MetaTags
+          title={`${post.title || 'Post'} by ${post.author.firstName} ${post.author.lastName} - SportSphere`}
+          description={post.content.length > 160 ? post.content.substring(0, 160) + '...' : post.content}
+          image={post.images && post.images.length > 0 ? 
+            (typeof post.images[0] === 'string' ? post.images[0] : post.images[0].url) : 
+            '/logo192.png'
+          }
+          url={window.location.href}
+          type="article"
+        />
+      )}
+      
       <div className="max-w-6xl mx-auto px-4">
         {/* Back button */}
         <div className="mb-6">
@@ -215,21 +175,28 @@ const PostDetails = () => {
             {/* Media display */}
             <div className="md:w-7/12 bg-black flex items-center justify-center">
               {isVideo ? (
-                <video 
-                  src={post.videoUrl} 
-                  poster={post.thumbnailUrl}
-                  className="w-full object-contain max-h-[80vh]"
-                  controls
-                  autoPlay
-                >
-                  Your browser does not support the video tag.
-                </video>
+                post.videos && post.videos.length > 0 ? (
+                  <video 
+                    src={typeof post.videos[0] === 'string' ? post.videos[0] : post.videos[0].url} 
+                    className="w-full object-contain max-h-[80vh]"
+                    controls
+                    autoPlay
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                ) : null
               ) : (
-                <img 
-                  src={post.imageUrl} 
-                  alt={post.caption} 
-                  className="w-full object-contain max-h-[80vh]"
-                />
+                post.images && post.images.length > 0 ? (
+                  <img 
+                    src={typeof post.images[0] === 'string' ? post.images[0] : post.images[0].url} 
+                    alt={post.content} 
+                    className="w-full object-contain max-h-[80vh]"
+                    onError={(e) => {
+                      console.error('Image failed to load:', e.target.src);
+                      e.target.src = '/placeholder-image.svg';
+                    }}
+                  />
+                ) : null
               )}
             </div>
             
@@ -237,16 +204,16 @@ const PostDetails = () => {
             <div className="md:w-5/12 flex flex-col">
               {/* Post header */}
               <div className="p-4 border-b flex items-center space-x-3">
-                <Link to={`/profile/${post.user.id}`}>
+                <Link to={`/profile/${post.author._id}`}>
                   <img 
-                    src={post.user.avatar} 
-                    alt={post.user.name} 
+                    src={post.author.avatar || `https://ui-avatars.com/api/?name=${post.author.firstName}+${post.author.lastName}&background=3b82f6&color=fff`} 
+                    alt={`${post.author.firstName} ${post.author.lastName}`} 
                     className="w-10 h-10 rounded-full object-cover border-2 border-primary-100"
                   />
                 </Link>
                 <div className="flex-grow">
-                  <Link to={`/profile/${post.user.id}`} className="font-medium text-gray-900 hover:text-primary-600">
-                    {post.user.name}
+                  <Link to={`/profile/${post.author._id}`} className="font-medium text-gray-900 hover:text-primary-600">
+                    {post.author.firstName} {post.author.lastName}
                   </Link>
                   {post.location && (
                     <p className="text-xs text-gray-500 flex items-center">
@@ -264,8 +231,8 @@ const PostDetails = () => {
               {/* Caption and details */}
               <div className="p-4 border-b">
                 <p className="text-gray-800 mb-3">
-                  <span className="font-medium mr-2">{post.user.name}</span>
-                  {post.caption}
+                  <span className="font-medium mr-2">{post.author.firstName} {post.author.lastName}</span>
+                  {post.content}
                 </p>
                 
                 {/* Tags */}
@@ -274,7 +241,7 @@ const PostDetails = () => {
                     {post.tags.map(tag => (
                       <Link 
                         key={tag} 
-                        to={`/posts/tags/${tag}`} 
+                        to={`/posts?search=${tag}`} 
                         className="text-primary-600 text-sm hover:underline"
                       >
                         #{tag}
@@ -287,22 +254,24 @@ const PostDetails = () => {
                 <div className="flex items-center text-xs text-gray-500 space-x-4 mb-3">
                   <span className="flex items-center">
                     <FaCalendarAlt className="mr-1" />
-                    {formatDate(post.timestamp)}
+                    {formatDate(post.createdAt)}
                   </span>
-                  <span className="flex items-center">
-                    <FaUser className="mr-1" />
-                    {post.sport}
-                  </span>
+                  {post.sport && (
+                    <span className="flex items-center">
+                      <FaUser className="mr-1" />
+                      {post.sport}
+                    </span>
+                  )}
                 </div>
                 
                 {/* Actions */}
                 <div className="flex justify-between items-center mt-4">
                   <div className="flex space-x-4">
                     <button 
-                      className={`flex items-center space-x-1 ${liked ? 'text-red-500' : 'text-gray-700'}`}
+                      className={`flex items-center space-x-1 ${isLiked ? 'text-red-500' : 'text-gray-700'}`}
                       onClick={handleLike}
                     >
-                      {liked ? <FaHeart className="w-6 h-6" /> : <FaRegHeart className="w-6 h-6" />}
+                      {isLiked ? <FaHeart className="w-6 h-6" /> : <FaRegHeart className="w-6 h-6" />}
                     </button>
                     <button className="flex items-center space-x-1 text-gray-700">
                       <FaComment className="w-6 h-6" />
@@ -323,33 +292,33 @@ const PostDetails = () => {
                 </div>
                 
                 {/* Likes count */}
-                <p className="font-medium text-gray-900 mt-3">{likes} likes</p>
+                <p className="font-medium text-gray-900 mt-3">{post.likesCount || 0} likes</p>
               </div>
               
               {/* Comments section */}
               <div className="flex-grow overflow-auto p-4 border-b">
                 <h3 className="font-medium text-gray-900 mb-4">Comments</h3>
                 
-                {comments.length > 0 ? (
+                {post.comments && post.comments.length > 0 ? (
                   <div className="space-y-4">
-                    {comments.map(comment => (
-                      <div key={comment.id} className="flex space-x-3">
-                        <Link to={`/profile/${comment.user.id}`}>
+                    {post.comments.map(comment => (
+                      <div key={comment._id} className="flex space-x-3">
+                        <Link to={`/profile/${comment.author._id}`}>
                           <img 
-                            src={comment.user.avatar} 
-                            alt={comment.user.name} 
+                            src={comment.author.avatar || `https://ui-avatars.com/api/?name=${comment.author.firstName}+${comment.author.lastName}&background=3b82f6&color=fff`} 
+                            alt={`${comment.author.firstName} ${comment.author.lastName}`} 
                             className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                           />
                         </Link>
                         <div>
                           <div className="bg-gray-100 px-3 py-2 rounded-lg">
-                            <Link to={`/profile/${comment.user.id}`} className="font-medium text-gray-900 text-sm mr-1">
-                              {comment.user.name}
+                            <Link to={`/profile/${comment.author._id}`} className="font-medium text-gray-900 text-sm mr-1">
+                              {comment.author.firstName} {comment.author.lastName}
                             </Link>
-                            <span className="text-gray-700 text-sm">{comment.text}</span>
+                            <span className="text-gray-700 text-sm">{comment.content}</span>
                           </div>
                           <div className="flex items-center mt-1 space-x-3 text-xs text-gray-500">
-                            <span>{getRelativeTime(comment.timestamp)}</span>
+                            <span>{getRelativeTime(comment.createdAt)}</span>
                             <button className="hover:text-gray-700">Like</button>
                             <button className="hover:text-gray-700">Reply</button>
                           </div>
@@ -395,40 +364,16 @@ const PostDetails = () => {
         
         {/* Related posts */}
         <div className="mt-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Posts</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">More Posts</h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {relatedPosts.map(relatedPost => (
-              <Link 
-                key={relatedPost.id} 
-                to={`/posts/${relatedPost.id}`}
-                className="block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-              >
-                <div className="relative">
-                  <img 
-                    src={relatedPost.type === 'photo' ? relatedPost.imageUrl : relatedPost.thumbnailUrl} 
-                    alt={`Post by ${relatedPost.user.name}`}
-                    className="w-full aspect-square object-cover"
-                  />
-                  {relatedPost.type === 'video' && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                        <FaPlay className="text-white ml-1" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900 truncate">{relatedPost.user.name}</p>
-                    <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full">
-                      {relatedPost.type === 'video' ? <FaVideo className="inline mr-0.5" /> : <FaImage className="inline mr-0.5" />}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500">{relatedPost.likes} likes</p>
-                </div>
-              </Link>
-            ))}
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">Discover more posts from the community</p>
+            <Link 
+              to="/posts"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
+            >
+              Browse All Posts
+            </Link>
           </div>
         </div>
       </div>

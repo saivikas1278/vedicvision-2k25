@@ -5,7 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Theme Provider
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Layout Components
 import NavbarSwitcher from './components/Layout/NavbarSwitcher';
@@ -29,12 +29,20 @@ import WorkoutBuilder from './pages/Fitness/WorkoutBuilder';
 import WorkoutTimer from './pages/Fitness/WorkoutTimer';
 import ProgressTracker from './pages/Fitness/ProgressTracker';
 import NutritionTracker from './pages/Fitness/NutritionTracker';
+import NutritionGuide from './pages/Fitness/NutritionGuide';
+import BrowseWorkout from './pages/Fitness/BrowseWorkout';
+import WorkoutDetails from './pages/Fitness/WorkoutDetails';
 import ProfilePage from './pages/Profile/ProfilePage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import HelpPage from './pages/HelpPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
+import TeamsPage from './pages/Team/TeamsPage';
 import CricketHub from './pages/Cricket/CricketHub';
 import CricketCreateMatch from './pages/Cricket/CricketCreateMatch';
+import ThemeShowcase from './pages/ThemeShowcase';
 
 // Match pages
 import CreateMatch from './pages/Matches/CreateMatch';
@@ -106,6 +114,9 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             
             {/* Auth Routes */}
             <Route 
@@ -116,6 +127,9 @@ function App() {
               path="/register" 
               element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} 
             />
+            
+            {/* Theme Showcase */}
+            <Route path="/theme-showcase" element={<ThemeShowcase />} />
             
             {/* Protected Routes */}
             <Route 
@@ -136,6 +150,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LiveTournamentBoard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Team Routes */}
+            <Route 
+              path="/teams" 
+              element={
+                <ProtectedRoute>
+                  <TeamsPage />
                 </ProtectedRoute>
               } 
             />
@@ -204,10 +228,13 @@ function App() {
             
             {/* Fitness Routes */}
             <Route path="/fitness" element={<FitnessHub />} />
+            <Route path="/fitness/browse-workouts" element={<BrowseWorkout />} />
+            <Route path="/fitness/workout/:id" element={<WorkoutDetails />} />
             <Route path="/fitness/workout-builder" element={<WorkoutBuilder />} />
             <Route path="/fitness/timer" element={<WorkoutTimer />} />
             <Route path="/fitness/progress" element={<ProgressTracker />} />
             <Route path="/fitness/nutrition" element={<NutritionTracker />} />
+            <Route path="/fitness/nutrition-guide" element={<NutritionGuide />} />
             <Route path="/fitness/:id" element={<FitnessDetails />} />
             
             {/* User Routes */}

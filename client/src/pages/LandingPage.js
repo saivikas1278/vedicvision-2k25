@@ -1,15 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useTheme } from '../contexts/ThemeContext';
 import AnimatedCard from '../components/UI/AnimatedCard';
 import ScrollReveal from '../components/UI/ScrollReveal';
 import GradientButton from '../components/UI/GradientButton';
 import MagneticButton from '../components/UI/MagneticButton';
 import ParticleBackground from '../components/UI/ParticleBackground';
 import FloatingElements from '../components/UI/FloatingElements';
+import DarkThemeBackground from '../components/Theme/DarkThemeBackground';
+import ThemeToggle from '../components/Theme/ThemeToggle';
 
 const LandingPage = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isDark, getCurrentPalette } = useTheme();
+  const palette = getCurrentPalette();
 
   const features = [
     {
@@ -81,36 +86,71 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Animated background elements */}
-      <ParticleBackground particleCount={30} color="#3b82f6" />
-      <FloatingElements />
-      
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white min-h-screen flex items-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full animate-float"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full animate-float" style={{animationDelay: '2s'}}></div>
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-pink-500/10 rounded-full animate-float" style={{animationDelay: '4s'}}></div>
+    <DarkThemeBackground>
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Theme Toggle - Floating */}
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle showSettings={true} />
         </div>
+
+        {/* Animated background elements */}
+        <ParticleBackground particleCount={30} color={palette.primary} />
+        <FloatingElements />
+        
+        {/* Hero Section */}
+        <section className={`relative ${
+          isDark 
+            ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900' 
+            : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'
+        } ${isDark ? 'text-white' : 'text-gray-900'} min-h-screen flex items-center`}>
+          <div className={`absolute inset-0 ${
+            isDark 
+              ? 'bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20'
+              : 'bg-gradient-to-br from-blue-100/50 via-purple-100/50 to-pink-100/50'
+          }`}></div>
+          <div className="absolute inset-0">
+            <div 
+              className="absolute top-20 left-20 w-72 h-72 rounded-full animate-float"
+              style={{ 
+                backgroundColor: `${palette.primary}10`,
+              }}
+            ></div>
+            <div 
+              className="absolute bottom-20 right-20 w-96 h-96 rounded-full animate-float" 
+              style={{
+                animationDelay: '2s',
+                backgroundColor: `${palette.accent}10`,
+              }}
+            ></div>
+            <div 
+              className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full animate-float" 
+              style={{
+                animationDelay: '4s',
+                backgroundColor: `${palette.secondary}10`,
+              }}
+            ></div>
+          </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 z-10">
           <div className="text-center">
             <ScrollReveal direction="up" distance={100} duration={800}>
-              <h1 className="text-6xl md:text-8xl font-bold mb-6 animate-gradient bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <h1 className="text-6xl md:text-8xl font-bold mb-6 animate-gradient gradient-text">
                 SportSphere
               </h1>
             </ScrollReveal>
             
             <ScrollReveal direction="up" distance={50} duration={800} delay={200}>
-              <p className="text-2xl md:text-3xl mb-8 text-gray-200 font-light">
+              <p className={`text-2xl md:text-3xl mb-8 font-light ${
+                isDark ? 'text-gray-200' : 'text-gray-700'
+              }`}>
                 Unified Multi-Sport Scoring & Fitness Hub
               </p>
             </ScrollReveal>
             
             <ScrollReveal direction="up" distance={30} duration={800} delay={400}>
-              <p className="text-lg mb-12 text-gray-300 max-w-4xl mx-auto leading-relaxed">
+              <p className={`text-lg mb-12 max-w-4xl mx-auto leading-relaxed ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 Connect, compete, and excel in your favorite sports with our comprehensive platform 
                 for tournament management, live scoring, video sharing, and fitness tracking.
               </p>
@@ -327,6 +367,7 @@ const LandingPage = () => {
         </div>
       </section>
     </div>
+    </DarkThemeBackground>
   );
 };
 

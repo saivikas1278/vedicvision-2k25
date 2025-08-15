@@ -10,7 +10,11 @@ import {
   getUserStats,
   getUserMatches,
   getUserTournaments,
-  searchUsers
+  searchUsers,
+  updateUserTeamStatus,
+  getDashboardStats,
+  getRecentActivities,
+  getNotifications
 } from '../controllers/users.js';
 import { protect, authorize, optional } from '../middleware/auth.js';
 
@@ -41,6 +45,13 @@ const updateUserValidation = [
 // Public routes
 router.get('/', optional, getUsers);
 router.get('/search', searchUsers);
+
+// Protected dashboard routes (must come before :id routes)
+router.get('/dashboard/stats', protect, getDashboardStats);
+router.get('/dashboard/activities', protect, getRecentActivities);
+router.get('/notifications', protect, getNotifications);
+
+// Public user routes with ID
 router.get('/:id', optional, getUser);
 router.get('/:id/stats', getUserStats);
 router.get('/:id/matches', getUserMatches);
@@ -48,6 +59,7 @@ router.get('/:id/tournaments', getUserTournaments);
 
 // Protected routes
 router.put('/:id', protect, updateUserValidation, updateUser);
+router.put('/:id/team-status', protect, updateUserTeamStatus);
 router.delete('/:id', protect, deleteUser);
 router.post('/:id/follow', protect, followUser);
 router.delete('/:id/unfollow', protect, unfollowUser);

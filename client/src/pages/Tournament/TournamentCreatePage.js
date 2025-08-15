@@ -43,10 +43,10 @@ const schema = yup.object().shape({
 
   // Registration Details
   registrationStartDate: yup.date().required('Registration start date is required'),
-  registrationEndDate: yup.date().min(
-    yup.ref('registrationStartDate'),
-    "Registration end date can't be before start date"
-  ).required('Registration end date is required'),
+  registrationEndDate: yup.date()
+    .min(yup.ref('registrationStartDate'), "Registration end date can't be before start date")
+    .max(yup.ref('startDate'), "Registration must end on or before tournament starts")
+    .required('Registration end date is required'),
   entryFee: yup.number().min(0, 'Entry fee must be a positive number').required('Entry fee is required'),
   paymentDetails: yup.string().required('Payment details are required'),
   eligibility: yup.string().required('Eligibility criteria are required'),
@@ -64,15 +64,23 @@ const TournamentCreatePage = () => {
   console.log('TournamentCreatePage rendering...');
   console.log('Mock Auth State:', mockAuthState);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       sport: '',
       format: '',
       entryFee: 0,
-      minTeamSize: 5
+      minTeamSize: 5,
+      // Set better default dates
+      registrationStartDate: new Date().toISOString().split('T')[0], // Today
+      registrationEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
+      startDate: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 8 days from now
+      endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 15 days from now
     }
   });
+
+  // Watch form values for real-time validation
+  // const watchedValues = watch(); // TODO: Use for real-time validation if needed
 
   const handleLogoChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -88,36 +96,139 @@ const TournamentCreatePage = () => {
     }
   };
 
+  // Helper function to map frontend sport names to backend enum values
+  const mapSportToBackend = (sport) => {
+    const sportMapping = {
+      'Basketball': 'basketball',
+      'Soccer': 'football',
+      'Volleyball': 'volleyball',
+      'Tennis': 'tennis',
+      'Cricket': 'cricket',
+      'Hockey': 'other', // Hockey not in backend enum, map to 'other'
+      'Rugby': 'other', // Rugby not in backend enum, map to 'other'
+      'Badminton': 'badminton'
+    };
+    return sportMapping[sport] || 'other';
+  };
+
+  // Helper function to map frontend format to backend enum values
+  const mapFormatToBackend = (format) => {
+    const formatMapping = {
+      'League': 'round-robin',
+      'Knockout': 'single-elimination',
+      'Round Robin': 'round-robin',
+      '5v5': 'round-robin', // Default team formats to round-robin
+      '3v3': 'round-robin',
+      '11v11': 'round-robin',
+      '7v7': 'round-robin',
+      '6v6': 'round-robin',
+      '4v4': 'round-robin',
+      'Singles': 'single-elimination',
+      'Doubles': 'single-elimination',
+      'Mixed Doubles': 'single-elimination',
+      'T20': 'round-robin',
+      'ODI': 'round-robin',
+      'Test': 'league',
+      'Union': 'round-robin',
+      'Sevens': 'single-elimination',
+      'Team Event': 'round-robin',
+      'Beach': 'round-robin',
+      'Indoor': 'round-robin',
+      'Mixed': 'round-robin',
+      'Field Hockey': 'round-robin',
+      'Ice Hockey': 'round-robin'
+    };
+    return formatMapping[format] || 'round-robin'; // Default to round-robin
+  };
+
+  // Helper function to extract city from venue name
+  const extractCityFromVenue = (venueName) => {
+    // Simple extraction - in real app, you might use geocoding API
+    if (venueName.toLowerCase().includes('central')) return 'Central City';
+    if (venueName.toLowerCase().includes('downtown')) return 'Downtown';
+    if (venueName.toLowerCase().includes('memorial')) return 'Memorial';
+    return venueName.split(' ')[0] || 'City'; // First word or default
+  };
+
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
       
-      // In a real app, you would upload the logo file and submit the form data to your API
       console.log('Form Data:', data);
       console.log('Logo File:', logoFile);
       
-      // Prepare tournament data with status and ID
+      // Validate dates on frontend before sending
+      const regStart = new Date(data.registrationStartDate);
+      const regEnd = new Date(data.registrationEndDate);
+      const tournStart = new Date(data.startDate);
+      const tournEnd = new Date(data.endDate);
+      
+      // Client-side date validation
+      if (regStart >= regEnd) {
+        showToast('Registration start date must be before registration end date', 'error');
+        return;
+      }
+      
+      if (regEnd > tournStart) {
+        showToast('Registration must end on or before tournament starts', 'error');
+        return;
+      }
+      
+      if (tournStart >= tournEnd) {
+        showToast('Tournament start date must be before tournament end date', 'error');
+        return;
+      }
+      
+      // Transform form data to match backend Tournament model structure
       const tournamentData = {
-        _id: Date.now().toString(), // Mock ID
-        ...data,
-        name: data.tournamentName, // Ensure we have a 'name' field for consistency
-        status: 'active', // Set status to active
-        registrationOpen: true,
-        logoUrl: logoPreview || null,
-        teamCount: 0,
-        location: data.venueName, // For consistency in display
-        sport: data.sport,
-        createdAt: new Date().toISOString()
+        name: data.tournamentName,
+        description: data.prizes && data.prizes.length >= 10 ? data.prizes : 
+                    `${data.tournamentName} - An exciting ${data.sport} tournament with great prizes and competitive matches.`, // Ensure minimum 10 characters
+        sport: mapSportToBackend(data.sport), // Map frontend sport to backend enum
+        format: mapFormatToBackend(data.format), // Map frontend format to backend enum
+        maxTeams: 32, // Default max teams
+        registrationFee: data.entryFee || 0,
+        venue: {
+          name: data.venueName,
+          address: data.venueAddress,
+          city: extractCityFromVenue(data.venueName), // Extract city
+          state: '', // Could be extracted from address
+          country: 'US' // Default country
+        },
+        dates: {
+          registrationStart: regStart.toISOString(),
+          registrationEnd: regEnd.toISOString(),
+          tournamentStart: tournStart.toISOString(),
+          tournamentEnd: tournEnd.toISOString()
+        },
+        status: 'draft', // Start as draft, organizer can change to open later
+        visibility: 'public',
+        rules: data.specialRules || '',
+        eligibility: {
+          skillLevel: 'all',
+          genderRestriction: 'none'
+        },
+        settings: {
+          allowLateRegistration: false,
+          requireApproval: false,
+          maxPlayersPerTeam: data.minTeamSize + 5 || 15, // Add some buffer
+          minPlayersPerTeam: data.minTeamSize || 5
+        }
       };
       
-      // Dispatch to Redux - in a real app this would send to the server
-      // For the mock implementation, we'll use a timeout to simulate API latency
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('Original Form Data:', data);
+      console.log('Transformed Tournament Data:', tournamentData);
+      console.log('Sport mapping:', data.sport, '->', mapSportToBackend(data.sport));
+      console.log('Format mapping:', data.format, '->', mapFormatToBackend(data.format));
       
-      // Dispatch the create action
-      dispatch(createTournament(tournamentData));
+      console.log('Transformed Tournament Data:', tournamentData);
       
-      showToast('Tournament published successfully! Players can now register.', 'success');
+      // Dispatch to Redux - this will call the actual API
+      const result = await dispatch(createTournament(tournamentData)).unwrap();
+      
+      console.log('Tournament Creation Result:', result);
+      
+      showToast('Tournament created successfully! You can now manage it from your dashboard.', 'success');
       reset();
       setLogoFile(null);
       setLogoPreview(null);
@@ -126,13 +237,13 @@ const TournamentCreatePage = () => {
       navigate('/tournaments');
     } catch (error) {
       console.error('Error creating tournament:', error);
-      showToast('Failed to create tournament. Please try again.', 'error');
+      showToast(error.message || 'Failed to create tournament. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const sportOptions = ['Basketball', 'Soccer', 'Volleyball', 'Tennis', 'Cricket', 'Hockey', 'Rugby', 'Badminton'];
+  const sportOptions = ['Basketball', 'Soccer', 'Volleyball', 'Tennis', 'Cricket', 'Badminton', 'Chess'];
   
   const formatOptions = {
     'Basketball': ['5v5', '3v3', 'League', 'Knockout', 'Mixed'],
