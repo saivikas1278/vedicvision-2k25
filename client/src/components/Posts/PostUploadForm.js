@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaCamera, FaVideo, FaTimesCircle, FaTags, FaMapMarkerAlt, FaImage, FaFileVideo, FaGlobeAmericas, FaUsers, FaLock, FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { createPost } from '../../redux/slices/postSlice';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import GradientButton from '../UI/GradientButton';

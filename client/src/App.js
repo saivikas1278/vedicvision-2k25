@@ -5,12 +5,13 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Theme Provider
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Layout Components
 import NavbarSwitcher from './components/Layout/NavbarSwitcher';
 import Footer from './components/Layout/Footer';
 import LoadingSpinner from './components/UI/LoadingSpinner';
+import SplashCursor from './components/UI/SplashCursor';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -42,7 +43,6 @@ import TermsPage from './pages/TermsPage';
 import TeamsPage from './pages/Team/TeamsPage';
 import CricketHub from './pages/Cricket/CricketHub';
 import CricketCreateMatch from './pages/Cricket/CricketCreateMatch';
-import ThemeShowcase from './pages/ThemeShowcase';
 
 // Match pages
 import CreateMatch from './pages/Matches/CreateMatch';
@@ -107,6 +107,7 @@ function App() {
   return (
     <ThemeProvider>
       <div className="min-h-screen transition-colors duration-300 bg-white dark:bg-gray-900">
+        <SplashCursor />
         <NavbarSwitcher />
         <main className="flex-1">
           <Routes>
@@ -127,9 +128,6 @@ function App() {
               path="/register" 
               element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} 
             />
-            
-            {/* Theme Showcase */}
-            <Route path="/theme-showcase" element={<ThemeShowcase />} />
             
             {/* Protected Routes */}
             <Route 

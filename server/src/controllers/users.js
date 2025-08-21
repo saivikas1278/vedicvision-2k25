@@ -530,51 +530,78 @@ export const updateUserTeamStatus = async (req, res, next) => {
 export const getDashboardStats = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    console.log('📊 Dashboard stats requested for user:', userId);
 
     // Get user with stats
     const user = await User.findById(userId).select('stats');
+    console.log('👤 User found:', user ? 'YES' : 'NO');
     
-    // Get teams count
+    // Get teams count - teams where user is a player or captain
     const teamsCount = await Team.countDocuments({ 
       $or: [
         { 'players.user': userId },
         { captain: userId }
       ]
     });
+    console.log('👥 Teams count:', teamsCount);
 
-    // Get tournaments count
-    const tournamentsCount = await Tournament.countDocuments({
+    // Get tournaments count - find teams user is part of, then get unique tournaments
+    const userTeams = await Team.find({
       $or: [
-        { participants: userId },
-        { 'teams.members': userId }
+        { 'players.user': userId },
+        { captain: userId }
       ]
-    });
+    }).distinct('tournament');
+    console.log('🏆 User teams tournaments:', userTeams.length);
 
-    // Get videos watched count (from fitness service or video posts)
-    const videosWatched = await FitnessContent.countDocuments({
-      'completedBy.user': userId,
-      type: 'video'
+    // Also get tournaments organized by user
+    const organizedTournaments = await Tournament.countDocuments({
+      organizer: userId
     });
+    console.log('🏆 Organized tournaments:', organizedTournaments);
 
-    // Get completed workouts count
-    const completedWorkouts = await FitnessContent.countDocuments({
-      'completedBy.user': userId,
-      type: 'workout'
-    });
+    const tournamentsCount = userTeams.length + organizedTournaments;
+
+    // Get videos watched count (from fitness service)
+    let videosWatched = 0;
+    let completedWorkouts = 0;
+
+    try {
+      videosWatched = await FitnessContent.countDocuments({
+        'userProgress.user': userId,
+        type: 'video',
+        'userProgress.completedAt': { $exists: true }
+      });
+
+      completedWorkouts = await FitnessContent.countDocuments({
+        'userProgress.user': userId,
+        type: { $in: ['workout-plan', 'challenge'] },
+        'userProgress.completedAt': { $exists: true }
+      });
+    } catch (fitnessError) {
+      console.log('Fitness data not available yet:', fitnessError.message);
+      // Default to 0 if fitness collection doesn't exist or has issues
+    }
+
+    console.log('💪 Videos watched:', videosWatched);
+    console.log('💪 Completed workouts:', completedWorkouts);
 
     const stats = {
       tournaments: tournamentsCount,
       teams: teamsCount,
       watchedVideos: videosWatched,
       completedWorkouts: completedWorkouts,
-      userStats: user.stats
+      userStats: user?.stats || {}
     };
+
+    console.log('📈 Final dashboard stats:', stats);
 
     res.status(200).json({
       success: true,
       data: stats
     });
   } catch (error) {
+    console.error('❌ Dashboard stats error:', error);
     next(error);
   }
 };
@@ -587,22 +614,35 @@ export const getRecentActivities = async (req, res, next) => {
     const userId = req.user.id;
     const activities = [];
 
-    // Get recent matches
+    // Get user's teams first
+    const userTeams = await Team.find({
+      $or: [
+        { 'players.user': userId },
+        { captain: userId }
+      ]
+    }).select('_id');
+
+    const teamIds = userTeams.map(team => team._id);
+
+    // Get recent matches involving user's teams
     const recentMatches = await Match.find({
       $or: [
-        { 'teams.players': userId },
+        { homeTeam: { $in: teamIds } },
+        { awayTeam: { $in: teamIds } },
         { createdBy: userId }
       ]
     })
     .sort({ createdAt: -1 })
     .limit(3)
-    .select('title status sport createdAt');
+    .populate('homeTeam', 'name')
+    .populate('awayTeam', 'name')
+    .select('title status sport createdAt homeTeam awayTeam');
 
     recentMatches.forEach(match => {
       activities.push({
         id: match._id,
         type: 'match',
-        title: `Match: ${match.title}`,
+        title: `Match: ${match.title || `${match.homeTeam?.name} vs ${match.awayTeam?.name}`}`,
         description: `${match.sport} match`,
         status: match.status,
         date: match.createdAt,
@@ -610,16 +650,16 @@ export const getRecentActivities = async (req, res, next) => {
       });
     });
 
-    // Get recent tournaments
+    // Get recent tournaments involving user
     const recentTournaments = await Tournament.find({
       $or: [
-        { participants: userId },
-        { 'teams.members': userId }
+        { organizer: userId },
+        { registeredTeams: { $in: teamIds } }
       ]
     })
     .sort({ createdAt: -1 })
     .limit(2)
-    .select('name status sport startDate');
+    .select('name status sport dates.tournamentStart');
 
     recentTournaments.forEach(tournament => {
       activities.push({
@@ -628,8 +668,31 @@ export const getRecentActivities = async (req, res, next) => {
         title: `Tournament: ${tournament.name}`,
         description: `${tournament.sport} tournament`,
         status: tournament.status,
-        date: tournament.startDate,
+        date: tournament.dates?.tournamentStart || tournament.createdAt,
         icon: 'FaTrophy'
+      });
+    });
+
+    // Get recent team activities
+    const recentTeams = await Team.find({
+      $or: [
+        { captain: userId },
+        { 'players.user': userId }
+      ]
+    })
+    .sort({ createdAt: -1 })
+    .limit(2)
+    .select('name sport createdAt registrationDetails.registrationStatus');
+
+    recentTeams.forEach(team => {
+      activities.push({
+        id: team._id,
+        type: 'team',
+        title: `Team: ${team.name}`,
+        description: `${team.sport} team`,
+        status: team.registrationDetails?.registrationStatus || 'active',
+        date: team.createdAt,
+        icon: 'FaUsers'
       });
     });
 
@@ -641,6 +704,7 @@ export const getRecentActivities = async (req, res, next) => {
       data: activities.slice(0, 5) // Return top 5 activities
     });
   } catch (error) {
+    console.error('Recent activities error:', error);
     next(error);
   }
 };
@@ -653,33 +717,68 @@ export const getNotifications = async (req, res, next) => {
     const userId = req.user.id;
     const notifications = [];
 
+    // Get user's teams
+    const userTeams = await Team.find({
+      $or: [
+        { 'players.user': userId },
+        { captain: userId }
+      ]
+    }).select('_id tournament');
+
+    const teamIds = userTeams.map(team => team._id);
+    const tournamentIds = userTeams.map(team => team.tournament).filter(Boolean);
+
     // Get upcoming tournaments
     const upcomingTournaments = await Tournament.find({
       $or: [
-        { participants: userId },
-        { 'teams.members': userId }
+        { organizer: userId },
+        { _id: { $in: tournamentIds } },
+        { registeredTeams: { $in: teamIds } }
       ],
-      startDate: { $gte: new Date() },
-      status: 'upcoming'
+      'dates.tournamentStart': { $gte: new Date() },
+      status: { $in: ['open', 'ongoing'] }
     })
-    .sort({ startDate: 1 })
+    .sort({ 'dates.tournamentStart': 1 })
     .limit(3)
-    .select('name startDate sport');
+    .select('name dates.tournamentStart sport');
 
     upcomingTournaments.forEach(tournament => {
-      const daysUntil = Math.ceil((new Date(tournament.startDate) - new Date()) / (1000 * 60 * 60 * 24));
+      const daysUntil = Math.ceil((new Date(tournament.dates.tournamentStart) - new Date()) / (1000 * 60 * 60 * 24));
       notifications.push({
         id: tournament._id,
         type: 'tournament',
         text: `Tournament "${tournament.name}" starts in ${daysUntil} days`,
-        time: tournament.startDate,
+        time: tournament.dates.tournamentStart,
         priority: daysUntil <= 3 ? 'high' : 'normal'
       });
     });
 
-    // Get pending team invitations (if you have a team invitations system)
-    // This is a placeholder - implement based on your team invitation logic
-    
+    // Get upcoming matches
+    const upcomingMatches = await Match.find({
+      $or: [
+        { homeTeam: { $in: teamIds } },
+        { awayTeam: { $in: teamIds } }
+      ],
+      scheduledTime: { $gte: new Date() },
+      status: 'scheduled'
+    })
+    .sort({ scheduledTime: 1 })
+    .limit(3)
+    .populate('homeTeam', 'name')
+    .populate('awayTeam', 'name')
+    .select('title scheduledTime homeTeam awayTeam');
+
+    upcomingMatches.forEach(match => {
+      const hoursUntil = Math.ceil((new Date(match.scheduledTime) - new Date()) / (1000 * 60 * 60));
+      notifications.push({
+        id: match._id,
+        type: 'match',
+        text: `Match "${match.homeTeam?.name} vs ${match.awayTeam?.name}" in ${hoursUntil} hours`,
+        time: match.scheduledTime,
+        priority: hoursUntil <= 24 ? 'high' : 'normal'
+      });
+    });
+
     // Sort by priority and time
     notifications.sort((a, b) => {
       if (a.priority === 'high' && b.priority !== 'high') return -1;
@@ -692,6 +791,7 @@ export const getNotifications = async (req, res, next) => {
       data: notifications
     });
   } catch (error) {
+    console.error('Notifications error:', error);
     next(error);
   }
 };

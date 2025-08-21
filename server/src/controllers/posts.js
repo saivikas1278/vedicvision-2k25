@@ -1,6 +1,7 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import cloudinary from '../config/cloudinary.js';
+import { uploadImage, uploadVideo, deleteFromCloudinary } from '../utils/uploadUtils.js';
 
 // @desc    Get all posts with filters
 // @route   GET /api/posts
@@ -163,9 +164,8 @@ export const createPost = async (req, res) => {
       for (const image of images) {
         try {
           console.log('[createPost] Uploading image:', image.name);
-          const result = await cloudinary.uploader.upload(image.tempFilePath, {
-            folder: 'sportsphere/posts/images',
-            resource_type: 'image'
+          const result = await uploadImage(image.tempFilePath, {
+            public_id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
           });
 
           console.log('[createPost] Image upload result:', {
@@ -193,9 +193,8 @@ export const createPost = async (req, res) => {
       for (const video of videos) {
         try {
           console.log('[createPost] Uploading video:', video.name);
-          const result = await cloudinary.uploader.upload(video.tempFilePath, {
-            folder: 'sportsphere/posts/videos',
-            resource_type: 'video'
+          const result = await uploadVideo(video.tempFilePath, {
+            public_id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
           });
 
           console.log('[createPost] Video upload result:', {
@@ -324,14 +323,14 @@ export const deletePost = async (req, res) => {
     // Delete images from cloudinary
     if (post.images?.length) {
       for (const image of post.images) {
-        await cloudinary.uploader.destroy(image.publicId);
+        await deleteFromCloudinary(image.publicId, 'image');
       }
     }
 
     // Delete videos from cloudinary
     if (post.videos?.length) {
       for (const video of post.videos) {
-        await cloudinary.uploader.destroy(video.publicId, { resource_type: 'video' });
+        await deleteFromCloudinary(video.publicId, 'video');
       }
     }
 

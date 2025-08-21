@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
+import { getCloudinaryTimestamp } from '../utils/timeSync.js';
 
 // Load environment variables
 dotenv.config();
@@ -26,11 +27,18 @@ testConfig();
 // Upload image to Cloudinary
 export const uploadImageToCloudinary = async (filePath, options = {}) => {
   try {
-    const result = await cloudinary.uploader.upload(filePath, {
+    const timestamp = await getCloudinaryTimestamp();
+    
+    const defaultOptions = {
       folder: 'sportsphere/posts/images',
       resource_type: 'image',
       quality: 'auto:good',
       fetch_format: 'auto',
+      timestamp
+    };
+
+    const result = await cloudinary.uploader.upload(filePath, {
+      ...defaultOptions,
       ...options
     });
     return result;
@@ -43,10 +51,17 @@ export const uploadImageToCloudinary = async (filePath, options = {}) => {
 // Upload video to Cloudinary
 export const uploadVideoToCloudinary = async (filePath, options = {}) => {
   try {
-    const result = await cloudinary.uploader.upload(filePath, {
+    const timestamp = await getCloudinaryTimestamp();
+    
+    const defaultOptions = {
       folder: 'sportsphere/posts/videos',
       resource_type: 'video',
       quality: 'auto:good',
+      timestamp
+    };
+
+    const result = await cloudinary.uploader.upload(filePath, {
+      ...defaultOptions,
       ...options
     });
     return result;

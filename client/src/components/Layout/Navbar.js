@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
-import { useTheme } from '../../contexts/ThemeContext';
-import ThemeToggle from '../Theme/ThemeToggle';
+import { useTheme } from '../../context/ThemeContext';
+import ThemeToggle from '../UI/ThemeToggle';
 import { 
   FaHome, 
   FaTrophy, 

@@ -283,21 +283,15 @@ const Dashboard = () => {
                   <div className="text-center py-8">
                     <p className="text-gray-500 mb-4">No recent activities yet</p>
                     <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                      <Link to="/tournaments">
-                        <GradientButton size="sm">
-                          Join Tournament
-                        </GradientButton>
-                      </Link>
-                      <Link to="/teams">
-                        <GradientButton size="sm">
-                          Create Team
-                        </GradientButton>
-                      </Link>
-                      <Link to="/fitness">
-                        <GradientButton size="sm">
-                          Start Workout
-                        </GradientButton>
-                      </Link>
+                      <GradientButton as={Link} to="/tournaments" size="sm">
+                        Join Tournament
+                      </GradientButton>
+                      <GradientButton as={Link} to="/teams" size="sm" variant="secondary">
+                        Create Team
+                      </GradientButton>
+                      <GradientButton as={Link} to="/fitness" size="sm" variant="outline">
+                        Start Workout
+                      </GradientButton>
                     </div>
                   </div>
                 )}

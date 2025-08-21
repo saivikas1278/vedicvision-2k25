@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useTheme } from '../../contexts/ThemeContext';
 
 const GradientButton = ({ 
   children, 
@@ -12,56 +11,28 @@ const GradientButton = ({
   const [isHovered, setIsHovered] = useState(false);
   const [ripples, setRipples] = useState([]);
   const buttonRef = useRef(null);
-  const { getCurrentPalette, isDark } = useTheme();
-  const palette = getCurrentPalette();
 
   const variants = {
     primary: {
-      gradient: `linear-gradient(135deg, ${palette.primary}, ${palette.accent})`,
-      hoverGradient: `linear-gradient(135deg, ${palette.secondary}, ${palette.primary})`,
+      gradient: 'from-blue-600 via-purple-600 to-pink-600',
+      hoverGradient: 'from-blue-500 via-purple-500 to-pink-500',
       text: 'text-white',
-      shadow: isDark ? 'shadow-dark-lg' : 'shadow-lg',
     },
     secondary: {
-      gradient: isDark 
-        ? 'linear-gradient(135deg, #475569, #64748b)' 
-        : 'linear-gradient(135deg, #e2e8f0, #cbd5e1)',
-      hoverGradient: isDark 
-        ? 'linear-gradient(135deg, #64748b, #94a3b8)' 
-        : 'linear-gradient(135deg, #cbd5e1, #94a3b8)',
-      text: isDark ? 'text-white' : 'text-gray-700',
-      shadow: isDark ? 'shadow-dark' : 'shadow-md',
+      gradient: 'from-gray-600 via-gray-700 to-gray-800',
+      hoverGradient: 'from-gray-500 via-gray-600 to-gray-700',
+      text: 'text-white',
     },
     success: {
-      gradient: 'linear-gradient(135deg, #10b981, #34d399)',
-      hoverGradient: 'linear-gradient(135deg, #059669, #10b981)',
+      gradient: 'from-green-600 via-emerald-600 to-teal-600',
+      hoverGradient: 'from-green-500 via-emerald-500 to-teal-500',
       text: 'text-white',
-      shadow: isDark ? 'shadow-dark-lg' : 'shadow-lg',
-    },
-    danger: {
-      gradient: 'linear-gradient(135deg, #ef4444, #f87171)',
-      hoverGradient: 'linear-gradient(135deg, #dc2626, #ef4444)',
-      text: 'text-white',
-      shadow: isDark ? 'shadow-dark-lg' : 'shadow-lg',
-    },
-    glass: {
-      gradient: isDark 
-        ? 'rgba(255, 255, 255, 0.1)' 
-        : 'rgba(255, 255, 255, 0.2)',
-      hoverGradient: isDark 
-        ? 'rgba(255, 255, 255, 0.2)' 
-        : 'rgba(255, 255, 255, 0.3)',
-      text: isDark ? 'text-white' : 'text-gray-700',
-      backdrop: true,
-      border: isDark ? 'border border-white/20' : 'border border-black/20',
     },
     outline: {
-      gradient: 'transparent',
-      hoverGradient: isDark 
-        ? 'rgba(255, 255, 255, 0.1)' 
-        : `rgba(${palette.primary}, 0.1)`,
-      text: isDark ? 'text-white' : `text-[${palette.primary}]`,
-      border: `border-2 border-[${palette.primary}]`,
+      gradient: 'from-transparent to-transparent',
+      hoverGradient: 'from-blue-50 to-purple-50',
+      text: 'text-gray-700 hover:text-gray-900',
+      border: 'border-2 border-gradient-to-r from-blue-600 to-purple-600',
     }
   };
 
@@ -97,41 +68,26 @@ const GradientButton = ({
     props.onClick?.(e);
   };
 
-  const buttonStyle = {
-    background: isHovered ? selectedVariant.hoverGradient : selectedVariant.gradient,
-    ...(selectedVariant.backdrop && {
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-    }),
-  };
-
   return (
     <button
       ref={buttonRef}
       className={`
         relative overflow-hidden rounded-xl font-semibold
         transition-all duration-300 ease-out
-        transform hover:scale-105 active:scale-95 hover-lift
+        transform hover:scale-105 active:scale-95
+        bg-gradient-to-r ${isHovered ? selectedVariant.hoverGradient : selectedVariant.gradient}
         ${selectedVariant.text}
         ${selectedSize}
         ${selectedVariant.border || ''}
-        ${selectedVariant.shadow || ''}
-        focus:outline-none focus:ring-4 focus:ring-opacity-50
-        ${animated ? 'animate-glow' : ''}
+        focus:outline-none focus:ring-4 focus:ring-blue-300/50
         ${className}
       `}
-      style={{
-        ...buttonStyle,
-        boxShadow: isHovered && variant === 'primary' 
-          ? `0 10px 30px rgba(${palette.primary.replace('#', '')}, 0.4)` 
-          : undefined,
-      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
       {...props}
     >
-      {/* Enhanced Shimmer effect */}
+      {/* Shimmer effect */}
       {animated && (
         <div 
           className={`
@@ -155,18 +111,6 @@ const GradientButton = ({
           }}
         />
       ))}
-
-      {/* Glow effect for primary variant */}
-      {variant === 'primary' && animated && (
-        <div 
-          className="absolute inset-0 rounded-xl opacity-75 blur-xl"
-          style={{
-            background: palette.gradient,
-            transform: 'scale(1.1)',
-            zIndex: -1,
-          }}
-        />
-      )}
 
       {/* Button content */}
       <span className="relative z-10 flex items-center justify-center gap-2">

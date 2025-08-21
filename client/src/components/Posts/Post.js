@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart, FaComment, FaShare, FaBookmark, FaRegBookmark, FaEllipsisH, FaPlay, FaTrash, FaEdit, FaCopy, FaWhatsapp, FaFacebook, FaTwitter, FaLinkedin } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { getRelativeTime } from '../../utils/helpers';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { likePost, addComment, sharePost, deletePost } from '../../redux/slices/postSlice';
 
 const Post = ({ post }) => {

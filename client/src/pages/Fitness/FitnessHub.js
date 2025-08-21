@@ -175,110 +175,12 @@ const FitnessHub = () => {
       </div>
 
       {/* Quick Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
-          <div className="text-center">
-            <FaDumbbell className="mx-auto mb-2 text-2xl" />
-            <p className="text-xl font-bold">{quickStats.totalWorkouts}</p>
-            <p className="text-xs opacity-90">Total Workouts</p>
-          </div>
-        </Card>
+      
+  
         
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4">
-          <div className="text-center">
-            <FaFire className="mx-auto mb-2 text-2xl" />
-            <p className="text-xl font-bold">{(quickStats.caloriesBurned / 1000).toFixed(1)}k</p>
-            <p className="text-xs opacity-90">Calories Burned</p>
-          </div>
-        </Card>
         
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4">
-          <div className="text-center">
-            <FaStopwatch className="mx-auto mb-2 text-2xl" />
-            <p className="text-xl font-bold">{quickStats.hoursExercised}h</p>
-            <p className="text-xs opacity-90">Hours Exercised</p>
-          </div>
-        </Card>
-        
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4">
-          <div className="text-center">
-            <FaTrophy className="mx-auto mb-2 text-2xl" />
-            <p className="text-xl font-bold">{quickStats.streakDays}</p>
-            <p className="text-xs opacity-90">Day Streak</p>
-          </div>
-        </Card>
-        
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4">
-          <div className="text-center">
-            <FaUser className="mx-auto mb-2 text-2xl" />
-            <p className="text-xl font-bold">{quickStats.muscleGroups}</p>
-            <p className="text-xs opacity-90">Muscle Groups</p>
-          </div>
-        </Card>
-        
-        <Card className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-4">
-          <div className="text-center">
-            <FaCalendarCheck className="mx-auto mb-2 text-2xl" />
-            <p className="text-xl font-bold">{quickStats.achievements}</p>
-            <p className="text-xs opacity-90">Achievements</p>
-          </div>
-        </Card>
-      </div>
 
-      {/* Weekly Progress */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Weekly Progress</h3>
-              <p className="text-2xl font-bold">{weeklyProgress.workoutsCompleted}/{weeklyProgress.totalWorkouts}</p>
-              <p className="text-sm opacity-90">Workouts Completed</p>
-            </div>
-            <FaChartBar size={32} className="opacity-80" />
-          </div>
-          <div className="mt-4">
-            <div className="bg-white bg-opacity-20 rounded-full h-2">
-              <div 
-                className="bg-white rounded-full h-2 transition-all duration-500"
-                style={{ width: `${(weeklyProgress.workoutsCompleted / weeklyProgress.totalWorkouts) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Calories Burned</h3>
-              <p className="text-2xl font-bold">{weeklyProgress.caloriesBurned}</p>
-              <p className="text-sm opacity-90">This Week</p>
-            </div>
-            <FaFire size={32} className="opacity-80" />
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Avg Duration</h3>
-              <p className="text-2xl font-bold">{weeklyProgress.avgDuration}min</p>
-              <p className="text-sm opacity-90">Per Workout</p>
-            </div>
-            <FaStopwatch size={32} className="opacity-80" />
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Completion Rate</h3>
-              <p className="text-2xl font-bold">{weeklyProgress.completionRate}%</p>
-              <p className="text-sm opacity-90">This Month</p>
-            </div>
-            <FaTrophy size={32} className="opacity-80" />
-          </div>
-        </Card>
-      </div>
+      
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content - 2/3 width */}
@@ -298,10 +200,6 @@ const FitnessHub = () => {
               <Link to="/fitness/nutrition-guide" className="bg-orange-50 hover:bg-orange-100 transition-colors p-4 rounded-lg flex flex-col items-center text-center">
                 <FaAppleAlt className="text-orange-500 text-2xl mb-2" />
                 <span className="text-sm font-medium text-gray-700">Nutrition Guide</span>
-              </Link>
-              <Link to="/fitness/progress" className="bg-purple-50 hover:bg-purple-100 transition-colors p-4 rounded-lg flex flex-col items-center text-center">
-                <FaChartBar className="text-purple-500 text-2xl mb-2" />
-                <span className="text-sm font-medium text-gray-700">View Progress</span>
               </Link>
               <Link to="/fitness/timer" className="bg-red-50 hover:bg-red-100 transition-colors p-4 rounded-lg flex flex-col items-center text-center">
                 <FaStopwatch className="text-red-500 text-2xl mb-2" />
@@ -438,45 +336,9 @@ const FitnessHub = () => {
             <p className="text-sm text-gray-600">- Leigh Hunt</p>
           </Card>
 
-          {/* Quick Links */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Links</h3>
-            <div className="space-y-3">
-              <Link to="/fitness/meal-plans" className="flex items-center text-gray-700 hover:text-blue-600 transition-colors">
-                <FaAppleAlt className="mr-3 text-green-500" />
-                <span>Meal Plans</span>
-              </Link>
-              <Link to="/fitness/body-measurements" className="flex items-center text-gray-700 hover:text-blue-600 transition-colors">
-                <FaUser className="mr-3 text-blue-500" />
-                <span>Body Measurements</span>
-              </Link>
-              <Link to="/fitness/achievements" className="flex items-center text-gray-700 hover:text-blue-600 transition-colors">
-                <FaTrophy className="mr-3 text-yellow-500" />
-                <span>Achievements</span>
-              </Link>
-              <Link to="/fitness/settings" className="flex items-center text-gray-700 hover:text-blue-600 transition-colors">
-                <FaStopwatch className="mr-3 text-purple-500" />
-                <span>Fitness Settings</span>
-              </Link>
-            </div>
-          </Card>
-
-          {/* Weekly Challenge */}
-          <Card className="p-6 bg-gradient-to-br from-orange-100 to-red-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Weekly Challenge</h3>
-            <div className="text-center">
-              <FaTrophy className="text-4xl text-orange-500 mx-auto mb-3" />
-              <p className="text-gray-700 font-medium mb-2">Complete 5 Workouts</p>
-              <p className="text-sm text-gray-600 mb-3">Progress: {weeklyProgress.workoutsCompleted}/5</p>
-              <div className="bg-gray-200 rounded-full h-2 mb-3">
-                <div 
-                  className="bg-orange-500 rounded-full h-2 transition-all duration-500"
-                  style={{ width: `${(weeklyProgress.workoutsCompleted / 5) * 100}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-500">Reward: Premium Workout Plan</p>
-            </div>
-          </Card>
+          
+          
+          
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { FaSearch, FaFilter, FaFire, FaClock, FaTrophy, FaChevronDown, FaImage, 
 import Post from '../../components/Posts/Post';
 import PostUploadForm from '../../components/Posts/PostUploadForm';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { 
   fetchPosts, 
   selectPosts, 
